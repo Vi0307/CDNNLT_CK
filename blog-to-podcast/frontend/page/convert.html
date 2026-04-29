@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog2Cast - Convert</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/convert.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fas fa-headphones"></i>
+                </div>
+                <h2>Blog2Cast</h2>
+            </div>
+            
+            <nav class="main-nav">
+                <a href="#" class="nav-item active">
+                    <!-- The screenshot does not show an icon for 'Convert' in the active button, but it shows text 'Convert' centered or slightly offset. Actually looking closely at Image 1, "Convert" has no icon, just text. Library has an icon. Let's replicate this. -->
+                    <span class="nav-text">Convert</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Library</span>
+                </a>
+            </nav>
+            
+            <div class="bottom-nav">
+                <a href="#" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-wrapper">
+                <!-- Header -->
+                <header class="page-header">
+                    <div class="badge">
+                        <span class="dot"></span> Intelligent Audio Conversion
+                    </div>
+                    <h1 class="main-title">Turn any article into a</h1>
+                    <div class="gradient-rectangle"></div>
+                    <p class="subtitle">Paste a link, choose a voice, and let our AI generate a professional audio<br>summary you can listen to anywhere.</p>
+                </header>
+
+                <!-- Form Card -->
+                <div class="card form-card">
+                    <form id="convertForm">
+                        <div class="form-group full-width">
+                            <label>Article URL</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-link input-icon"></i>
+                                <input type="url" id="articleUrl" placeholder="https://example.com/blog-post" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Voice Profile</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-microphone input-icon"></i>
+                                    <input type="text" readonly placeholder=" " class="fake-select">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Output Language</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-language input-icon"></i>
+                                    <input type="text" readonly placeholder=" " class="fake-select">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Initial Action Button -->
+                        <div id="actionArea">
+                            <button type="submit" class="primary-btn btn-full">Convert to Podcast <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                        
+                        <!-- Progress Area (Hidden Initially) -->
+                        <div id="progressArea" class="hidden">
+                            <h4 class="section-heading">Conversion Progress</h4>
+                            <div class="stepper">
+                                <div class="step completed">
+                                    <div class="step-icon"><i class="fas fa-check"></i></div>
+                                    <div class="step-content">
+                                        <h5>Crawling Article</h5>
+                                        <p>Extracting text content</p>
+                                    </div>
+                                </div>
+                                <div class="step-line"></div>
+                                <div class="step completed">
+                                    <div class="step-icon"><i class="fas fa-check"></i></div>
+                                    <div class="step-content">
+                                        <h5>AI Processing</h5>
+                                        <p>Summarizing & generating script</p>
+                                    </div>
+                                </div>
+                                <div class="step-line"></div>
+                                <div class="step completed">
+                                    <div class="step-icon"><i class="fas fa-check"></i></div>
+                                    <div class="step-content">
+                                        <h5>Audio Generation</h5>
+                                        <p>Converting text to speech</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="result-banner">
+                                <div class="result-info">
+                                    <div class="icon-circle-blue">
+                                        <i class="fas fa-microphone"></i>
+                                    </div>
+                                    <div class="result-text">
+                                        <h5>Podcast Ready!</h5>
+                                        <p>Duration: ~5:30</p>
+                                    </div>
+                                </div>
+                                <button type="button" class="play-btn"><i class="fas fa-play-circle"></i> Play Now</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- AI Assistant Area (Hidden Initially) -->
+                <div id="aiAssistantArea" class="ai-assistant-section hidden">
+                    <div class="section-header">
+                        <div class="icon-circle-orange">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h3>AI Assistant</h3>
+                    </div>
+                    
+                    <div class="card assistant-card">
+                        <!-- Tabs -->
+                        <div class="tabs">
+                            <button class="tab active" data-tab="ask">
+                                <i class="far fa-comment-alt"></i> Ask
+                            </button>
+                            <button class="tab" data-tab="explain">
+                                <i class="fas fa-book-open"></i> Explain
+                            </button>
+                        </div>
+                        
+                        <!-- Tab Content: Ask -->
+                        <div class="tab-content active" id="tab-ask">
+                            <div class="chat-area">
+                                <div class="chat-message bot">
+                                    <div class="avatar"><i class="fas fa-robot"></i></div>
+                                    <div class="message-bubble">Hi! I've processed this article. What would you like to know?</div>
+                                </div>
+                            </div>
+                            <div class="chat-input-area">
+                                <input type="text" placeholder="Ask a question about the article...">
+                                <button type="button" class="send-btn"><i class="far fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab Content: Explain -->
+                        <div class="tab-content" id="tab-explain">
+                            <div class="explain-hint">
+                                <i class="fas fa-magic"></i> Highlight any text below to get an instant explanation
+                            </div>
+                            <div class="article-text">
+                                <p>This article explores how intelligent systems can automatically convert written content into audio podcasts using a microservices architecture. The process involves three main stages: web crawling, AI processing, and audio generation.</p>
+                                <p>The web crawling service uses HTTP requests and BeautifulSoup4 to extract clean text from any blog post or article URL. This raw text is then passed through a message queue to the AI processing service.</p>
+                                <p>The AI service leverages large language models like Claude or GPT to perform several tasks: summarizing the article into a concise script, generating a natural conversational flow suitable for audio, and identifying key concepts and terminology. This step transforms raw article text into a polished podcast script.</p>
+                                <p>The audio generation service uses Google Text-to-Speech (gTTS) technology to convert the script into natural-sounding speech. Users can select different voice profiles and output languages. The resulting MP3 file is stored and made available for streaming or download.</p>
+                                <p>The entire pipeline is orchestrated through RabbitMQ message queues, ensuring each service operates independently as a Docker container. A notification service tracks the status of each request and provides real-time updates to the client through polling.</p>
+                                <p>Key technologies mentioned include Python FastAPI for the API gateway, PostgreSQL for production databases, and Redis Queue as a simpler alternative to RabbitMQ. The system...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="../js/convert.js"></script>
+</body>
+</html>
