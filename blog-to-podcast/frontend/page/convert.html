@@ -26,11 +26,10 @@
             
             <nav class="main-nav">
                 <a href="#" class="nav-item active">
-                    <!-- The screenshot does not show an icon for 'Convert' in the active button, but it shows text 'Convert' centered or slightly offset. Actually looking closely at Image 1, "Convert" has no icon, just text. Library has an icon. Let's replicate this. -->
                     <span class="nav-text">Convert</span>
                 </a>
                 <a href="#" class="nav-item">
-                    <i class="fas fa-chart-bar"></i>
+                    <i class="fas fa-chart-bar" style="width: 20px;"></i>
                     <span>Library</span>
                 </a>
             </nav>
@@ -94,27 +93,27 @@
                         </div>
                         
                         <!-- Progress Area (Hidden Initially) -->
-                        <div id="progressArea" class="hidden">
+                        <div id="progressArea" class="hidden" style="margin-top: 32px;">
                             <h4 class="section-heading">Conversion Progress</h4>
                             <div class="stepper">
-                                <div class="step completed">
-                                    <div class="step-icon"><i class="fas fa-check"></i></div>
+                                <div class="step" id="step-0">
+                                    <div class="step-icon"><i class="fas fa-circle"></i></div>
                                     <div class="step-content">
                                         <h5>Crawling Article</h5>
                                         <p>Extracting text content</p>
                                     </div>
                                 </div>
-                                <div class="step-line"></div>
-                                <div class="step completed">
-                                    <div class="step-icon"><i class="fas fa-check"></i></div>
+                                <div class="step-line" id="line-0"></div>
+                                <div class="step" id="step-1">
+                                    <div class="step-icon"><i class="fas fa-circle"></i></div>
                                     <div class="step-content">
                                         <h5>AI Processing</h5>
                                         <p>Summarizing & generating script</p>
                                     </div>
                                 </div>
-                                <div class="step-line"></div>
-                                <div class="step completed">
-                                    <div class="step-icon"><i class="fas fa-check"></i></div>
+                                <div class="step-line" id="line-1"></div>
+                                <div class="step" id="step-2">
+                                    <div class="step-icon"><i class="fas fa-circle"></i></div>
                                     <div class="step-content">
                                         <h5>Audio Generation</h5>
                                         <p>Converting text to speech</p>
@@ -122,7 +121,7 @@
                                 </div>
                             </div>
                             
-                            <div class="result-banner">
+                            <div class="result-banner hidden-banner" id="resultBanner">
                                 <div class="result-info">
                                     <div class="icon-circle-blue">
                                         <i class="fas fa-microphone"></i>
@@ -191,6 +190,61 @@
 
             </div>
         </main>
+    </div>
+
+    <!-- Explain Popup -->
+    <div id="explainPopup" class="explain-popup hidden">
+        <div class="popup-header">
+            <div class="popup-title">
+                <i class="fas fa-book-open"></i>
+                <span id="popupSelectedText">"Google Text-to-Speech (gTTS)"</span>
+            </div>
+            <button class="popup-close-btn" id="closePopupBtn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="popup-body">
+            <button id="explainTermBtn" class="primary-btn btn-full popup-explain-btn">
+                <i class="fas fa-magic"></i> Explain this term
+            </button>
+            <div id="explanationText" class="explanation-content hidden">
+                <!-- Explanation will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Audio Player (Hidden by default) -->
+    <div id="globalAudioPlayer" class="audio-player-bar hidden">
+        <div class="player-content">
+            <div class="player-info">
+                <div class="player-icon"><i class="fas fa-podcast"></i></div>
+                <div class="player-text">
+                    <h4 id="playerTitle">Understanding Microservices Architecture</h4>
+                    <p>Generated Podcast • 5:30</p>
+                </div>
+            </div>
+            
+            <div class="player-controls">
+                <button class="control-btn"><i class="fas fa-backward-step"></i></button>
+                <button class="control-btn play-pause-btn" id="playerPlayBtn"><i class="fas fa-pause"></i></button>
+                <button class="control-btn"><i class="fas fa-forward-step"></i></button>
+            </div>
+            
+            <div class="player-progress">
+                <span class="time-current" data-seconds="0">0:00</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: 0%;"></div>
+                    <div class="progress-bar-thumb" style="left: 0%;"></div>
+                </div>
+                <span class="time-total">5:30</span>
+            </div>
+            
+            <div class="player-volume">
+                <i class="fas fa-volume-up"></i>
+                <div class="volume-bar">
+                    <div class="volume-fill" style="width: 80%;"></div>
+                </div>
+                <button class="close-player-btn" id="closePlayerBtn"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
     </div>
 
     <!-- Custom JS -->

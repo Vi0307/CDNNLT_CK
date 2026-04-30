@@ -1,153 +1,265 @@
-// ============================================================
-// Config
-// ============================================================
-const API_BASE = "http://localhost:8001";
-
-// ============================================================
-// Helpers
-// ============================================================
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function setStepState(stepEl, state) {
-    // state: 'pending' | 'active' | 'completed' | 'error'
-    stepEl.classList.remove('pending', 'active', 'completed', 'error');
-    stepEl.classList.add(state);
-    const icon = stepEl.querySelector('.step-icon i');
-    if (state === 'completed') icon.className = 'fas fa-check';
-    else if (state === 'active')   icon.className = 'fas fa-spinner fa-spin';
-    else if (state === 'error')    icon.className = 'fas fa-times';
-    else                           icon.className = 'fas fa-circle';
-}
-
-// ============================================================
-// Main Form Logic
-// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-    const convertForm     = document.getElementById('convertForm');
-    const actionArea      = document.getElementById('actionArea');
-    const progressArea    = document.getElementById('progressArea');
+    const convertForm = document.getElementById('convertForm');
+    const actionArea = document.getElementById('actionArea');
+    const progressArea = document.getElementById('progressArea');
     const aiAssistantArea = document.getElementById('aiAssistantArea');
-
-    // Lấy các bước trong stepper
-    const steps = document.querySelectorAll('.stepper .step');
-    // steps[0] = Crawling Article
-    // steps[1] = AI Processing
-    // steps[2] = Audio Generation
-
-    // Hiển thị text nhận từ API vào tab Explain
-    const articleTextEl = document.querySelector('.article-text');
-
-    // -------------------------------------------------------
-    // Form Submit
-    // -------------------------------------------------------
+    const resultBanner = document.getElementById('resultBanner');
+    
+    // Form submission simulation
     if (convertForm) {
-        convertForm.addEventListener('submit', async (e) => {
+        convertForm.addEventListener('submit', (e) => {
             e.preventDefault();
-
+            
+            // Check if URL is provided
             const urlInput = document.getElementById('articleUrl');
-            const url = urlInput.value.trim();
-            if (!url) return;
+            if (!urlInput.value) return;
 
-            // Reset UI
+            // Hide action button
             actionArea.classList.add('hidden');
+            
+            // Show progress area
             progressArea.classList.remove('hidden');
-            aiAssistantArea.classList.add('hidden');
-
-            // Đặt tất cả steps về pending
-            steps.forEach(s => setStepState(s, 'pending'));
-
-            // -----------------------------------------------
-            // Bước 1: Crawl Article → gọi content-service
-            // -----------------------------------------------
-            setStepState(steps[0], 'active');
-            await sleep(500); // nhỏ delay để user thấy animation
-
-            let crawlData = null;
-            try {
-                const res = await fetch(`${API_BASE}/crawl`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ url })
-                });
-
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || "Crawl thất bại");
-                }
-
-                crawlData = await res.json();
-                setStepState(steps[0], 'completed');
-
-                // Hiển thị text bài viết vào tab Explain
-                if (articleTextEl && crawlData.text) {
-                    articleTextEl.innerHTML = `
-                        <p><strong>${crawlData.title}</strong></p>
-                        ${crawlData.text.split('\n\n').map(p => `<p>${p.trim()}</p>`).join('')}
-                        ${crawlData.is_mock ? '<p class="mock-badge"><i class="fas fa-flask"></i> Mock data · ' + crawlData.word_count + ' words</p>' : ''}
-                    `;
-                }
-
-            } catch (err) {
-                setStepState(steps[0], 'error');
-                showError(`❌ Lỗi crawl: ${err.message}`);
-                actionArea.classList.remove('hidden');
-                return;
-            }
-
-            // -----------------------------------------------
-            // Bước 2: AI Processing (chưa có API → mock delay)
-            // TODO: Kết nối API /process của bạn bè ở đây
-            // -----------------------------------------------
-            setStepState(steps[1], 'active');
-            await sleep(1800); // giả lập thời gian xử lý AI
-            setStepState(steps[1], 'completed');
-
-            // -----------------------------------------------
-            // Bước 3: Audio Generation (chưa có API → mock delay)
-            // TODO: Kết nối API /tts sau này
-            // -----------------------------------------------
-            setStepState(steps[2], 'active');
-            await sleep(1500);
-            setStepState(steps[2], 'completed');
-
-            // -----------------------------------------------
-            // Hiện kết quả và AI Assistant
-            // -----------------------------------------------
-            aiAssistantArea.classList.remove('hidden');
+            
+            // Start simulation
+            simulateProgress();
         });
     }
 
-    // -------------------------------------------------------
-    // Tab Switching
-    // -------------------------------------------------------
-    const tabs        = document.querySelectorAll('.tab');
+    async function simulateProgress() {
+        // Step 0: Crawling
+        await activateStep(0);
+        await new Promise(r => setTimeout(r, 1500));
+        completeStep(0);
+
+        // Step 1: AI Processing
+        await activateStep(1);
+        await new Promise(r => setTimeout(r, 2000));
+        completeStep(1);
+
+        // Step 2: Audio Generation
+        await activateStep(2);
+        await new Promise(r => setTimeout(r, 2000));
+        completeStep(2);
+
+        // Show Result and AI Assistant
+        resultBanner.classList.remove('hidden-banner');
+        resultBanner.classList.add('fade-in');
+        
+        setTimeout(() => {
+            aiAssistantArea.classList.remove('hidden');
+            aiAssistantArea.classList.add('fade-in');
+        }, 500);
+    }
+
+    function activateStep(index) {
+        const step = document.getElementById(`step-${index}`);
+        if (!step) return;
+        step.classList.add('active');
+        const icon = step.querySelector('.step-icon i');
+        if (icon) icon.className = 'fas fa-spinner fa-spin';
+    }
+
+    function completeStep(index) {
+        const step = document.getElementById(`step-${index}`);
+        if (!step) return;
+        step.classList.remove('active');
+        step.classList.add('completed');
+        const icon = step.querySelector('.step-icon i');
+        if (icon) icon.className = 'fas fa-check';
+        
+        // Color the line
+        const line = document.getElementById(`line-${index}`);
+        if (line) {
+            line.classList.add('completed-line');
+        }
+    }
+
+    // Tab Switching Logic
+    const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
+            // Remove active class from all tabs and contents
             tabs.forEach(t => t.classList.remove('active'));
             tabContents.forEach(c => c.classList.remove('active'));
+
+            // Add active class to clicked tab
             tab.classList.add('active');
+
+            // Add active class to corresponding content
             const tabId = tab.getAttribute('data-tab');
             const targetContent = document.getElementById(`tab-${tabId}`);
-            if (targetContent) targetContent.classList.add('active');
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
         });
     });
 
-    // -------------------------------------------------------
-    // Error helper
-    // -------------------------------------------------------
-    function showError(message) {
-        let errEl = document.getElementById('errorMsg');
-        if (!errEl) {
-            errEl = document.createElement('div');
-            errEl.id = 'errorMsg';
-            errEl.style.cssText = 'color:#ff6b6b;padding:12px;background:rgba(255,107,107,0.1);border-radius:8px;margin-top:12px;font-size:14px;';
-            progressArea.appendChild(errEl);
+    // Text Selection Logic for Explain Tab
+    const articleTextContainer = document.querySelector('.article-text');
+    const explainPopup = document.getElementById('explainPopup');
+    const popupSelectedText = document.getElementById('popupSelectedText');
+    const closePopupBtn = document.getElementById('closePopupBtn');
+    const explainTermBtn = document.getElementById('explainTermBtn');
+    const explanationText = document.getElementById('explanationText');
+
+    if (articleTextContainer && explainPopup) {
+        document.addEventListener('mouseup', (e) => {
+            // Only trigger if we are in the explain tab
+            const explainTabContent = document.getElementById('tab-explain');
+            if (!explainTabContent || !explainTabContent.classList.contains('active')) {
+                return;
+            }
+
+            // Don't hide popup if clicking inside it
+            if (explainPopup.contains(e.target)) return;
+
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
+
+            if (selectedText.length > 0 && articleTextContainer.contains(selection.anchorNode)) {
+                // Get bounding rect of the selection
+                const range = selection.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+
+                // Position the popup
+                explainPopup.style.left = `${rect.left + window.scrollX + (rect.width / 2) - 160}px`; // center it (width is 320)
+                explainPopup.style.top = `${rect.bottom + window.scrollY + 10}px`;
+                
+                // Keep it within screen bounds roughly
+                const popupLeft = parseInt(explainPopup.style.left);
+                if (popupLeft < 10) explainPopup.style.left = '10px';
+                
+                // Set text
+                popupSelectedText.textContent = `"${selectedText}"`;
+                
+                // Reset states
+                explainTermBtn.classList.remove('hidden');
+                explanationText.classList.add('hidden');
+                explanationText.innerHTML = '';
+                
+                explainPopup.classList.remove('hidden');
+                // Small timeout to allow display:block to apply before animating opacity
+                setTimeout(() => explainPopup.classList.add('show'), 10);
+            } else {
+                hidePopup();
+            }
+        });
+        
+        closePopupBtn.addEventListener('click', () => {
+            hidePopup();
+            window.getSelection().removeAllRanges();
+        });
+
+        explainTermBtn.addEventListener('click', () => {
+            explainTermBtn.classList.add('hidden');
+            explanationText.classList.remove('hidden');
+            explanationText.innerHTML = `<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Generating explanation...`;
+            
+            // Simulate AI delay
+            setTimeout(() => {
+                const term = popupSelectedText.textContent.replace(/"/g, '');
+                explanationText.innerHTML = `<strong>"${term}"</strong> — This term refers to a concept discussed in the article. In this context, it describes a key aspect of the topic being covered, relating to how modern systems process and transform content efficiently.`;
+            }, 1000);
+        });
+
+        function hidePopup() {
+            explainPopup.classList.remove('show');
+            setTimeout(() => {
+                if (!explainPopup.classList.contains('show')) {
+                    explainPopup.classList.add('hidden');
+                }
+            }, 200); // match transition duration
         }
-        errEl.textContent = message;
-        errEl.style.display = 'block';
+    }
+
+    // Audio Player Logic
+    const playBtn = document.querySelector('.play-btn'); // The button in the result banner
+    const globalAudioPlayer = document.getElementById('globalAudioPlayer');
+    const closePlayerBtn = document.getElementById('closePlayerBtn');
+    const playerPlayBtn = document.getElementById('playerPlayBtn');
+    
+    let isPlaying = false;
+    let progressInterval;
+
+    if (playBtn && globalAudioPlayer) {
+        playBtn.addEventListener('click', () => {
+            globalAudioPlayer.classList.remove('hidden');
+            // small delay to allow display block to apply before translation
+            setTimeout(() => {
+                globalAudioPlayer.classList.add('show');
+            }, 10);
+            
+            // Auto start simulation if not playing
+            if (!isPlaying) {
+                startPlaying();
+            }
+        });
+        
+        closePlayerBtn.addEventListener('click', () => {
+            globalAudioPlayer.classList.remove('show');
+            setTimeout(() => {
+                if (!globalAudioPlayer.classList.contains('show')) {
+                    globalAudioPlayer.classList.add('hidden');
+                }
+            }, 300);
+            stopPlaying();
+        });
+        
+        playerPlayBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                stopPlaying();
+            } else {
+                startPlaying();
+            }
+        });
+    }
+    
+    function startPlaying() {
+        isPlaying = true;
+        const icon = playerPlayBtn.querySelector('i');
+        icon.className = 'fas fa-pause';
+        
+        // Update the banner play button text too if desired
+        if(playBtn) {
+            playBtn.innerHTML = '<i class="fas fa-pause-circle"></i> Playing...';
+        }
+        
+        // Simulating progress
+        const progressBarFill = document.querySelector('.progress-bar-fill');
+        const progressBarThumb = document.querySelector('.progress-bar-thumb');
+        const timeCurrent = document.querySelector('.time-current');
+        
+        let currentSeconds = parseInt(timeCurrent.getAttribute('data-seconds') || 0);
+        const totalSeconds = 330; // 5:30
+        
+        progressInterval = setInterval(() => {
+            if(currentSeconds >= totalSeconds) {
+                stopPlaying();
+                return;
+            }
+            currentSeconds++;
+            timeCurrent.setAttribute('data-seconds', currentSeconds);
+            
+            const mins = Math.floor(currentSeconds / 60);
+            const secs = currentSeconds % 60;
+            timeCurrent.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            
+            const percent = (currentSeconds / totalSeconds) * 100;
+            progressBarFill.style.width = `${percent}%`;
+            progressBarThumb.style.left = `${percent}%`;
+        }, 1000); // update every second
+    }
+    
+    function stopPlaying() {
+        isPlaying = false;
+        const icon = playerPlayBtn.querySelector('i');
+        icon.className = 'fas fa-play';
+        clearInterval(progressInterval);
+        
+        if(playBtn) {
+            playBtn.innerHTML = '<i class="fas fa-play-circle"></i> Play Now';
+        }
     }
 });
