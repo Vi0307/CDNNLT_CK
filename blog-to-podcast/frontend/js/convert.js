@@ -173,4 +173,93 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 200); // match transition duration
         }
     }
+
+    // Audio Player Logic
+    const playBtn = document.querySelector('.play-btn'); // The button in the result banner
+    const globalAudioPlayer = document.getElementById('globalAudioPlayer');
+    const closePlayerBtn = document.getElementById('closePlayerBtn');
+    const playerPlayBtn = document.getElementById('playerPlayBtn');
+    
+    let isPlaying = false;
+    let progressInterval;
+
+    if (playBtn && globalAudioPlayer) {
+        playBtn.addEventListener('click', () => {
+            globalAudioPlayer.classList.remove('hidden');
+            // small delay to allow display block to apply before translation
+            setTimeout(() => {
+                globalAudioPlayer.classList.add('show');
+            }, 10);
+            
+            // Auto start simulation if not playing
+            if (!isPlaying) {
+                startPlaying();
+            }
+        });
+        
+        closePlayerBtn.addEventListener('click', () => {
+            globalAudioPlayer.classList.remove('show');
+            setTimeout(() => {
+                if (!globalAudioPlayer.classList.contains('show')) {
+                    globalAudioPlayer.classList.add('hidden');
+                }
+            }, 300);
+            stopPlaying();
+        });
+        
+        playerPlayBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                stopPlaying();
+            } else {
+                startPlaying();
+            }
+        });
+    }
+    
+    function startPlaying() {
+        isPlaying = true;
+        const icon = playerPlayBtn.querySelector('i');
+        icon.className = 'fas fa-pause';
+        
+        // Update the banner play button text too if desired
+        if(playBtn) {
+            playBtn.innerHTML = '<i class="fas fa-pause-circle"></i> Playing...';
+        }
+        
+        // Simulating progress
+        const progressBarFill = document.querySelector('.progress-bar-fill');
+        const progressBarThumb = document.querySelector('.progress-bar-thumb');
+        const timeCurrent = document.querySelector('.time-current');
+        
+        let currentSeconds = parseInt(timeCurrent.getAttribute('data-seconds') || 0);
+        const totalSeconds = 330; // 5:30
+        
+        progressInterval = setInterval(() => {
+            if(currentSeconds >= totalSeconds) {
+                stopPlaying();
+                return;
+            }
+            currentSeconds++;
+            timeCurrent.setAttribute('data-seconds', currentSeconds);
+            
+            const mins = Math.floor(currentSeconds / 60);
+            const secs = currentSeconds % 60;
+            timeCurrent.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            
+            const percent = (currentSeconds / totalSeconds) * 100;
+            progressBarFill.style.width = `${percent}%`;
+            progressBarThumb.style.left = `${percent}%`;
+        }, 1000); // update every second
+    }
+    
+    function stopPlaying() {
+        isPlaying = false;
+        const icon = playerPlayBtn.querySelector('i');
+        icon.className = 'fas fa-play';
+        clearInterval(progressInterval);
+        
+        if(playBtn) {
+            playBtn.innerHTML = '<i class="fas fa-play-circle"></i> Play Now';
+        }
+    }
 });
