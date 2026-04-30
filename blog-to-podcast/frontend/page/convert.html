@@ -76,16 +76,33 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Voice Profile</label>
-                                <div class="input-wrapper">
+                                <div class="input-wrapper select-wrapper">
                                     <i class="fas fa-microphone input-icon"></i>
-                                    <input type="text" readonly placeholder=" " class="fake-select">
+                                    <select class="custom-select" id="voiceProfile" required>
+                                        <option value="" disabled selected>Select Voice</option>
+                                        <option value="alloy">Alloy (Neutral)</option>
+                                        <option value="echo">Echo (Male)</option>
+                                        <option value="fable">Fable (British)</option>
+                                        <option value="onyx">Onyx (Deep)</option>
+                                        <option value="nova">Nova (Female)</option>
+                                        <option value="shimmer">Shimmer (Clear)</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down select-arrow"></i>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label>Output Language</label>
-                                <div class="input-wrapper">
+                                <div class="input-wrapper select-wrapper">
                                     <i class="fas fa-language input-icon"></i>
-                                    <input type="text" readonly placeholder=" " class="fake-select">
+                                    <select class="custom-select" id="outputLanguage" required>
+                                        <option value="" disabled selected>Select Language</option>
+                                        <option value="en">English</option>
+                                        <option value="vi">Vietnamese</option>
+                                        <option value="es">Spanish</option>
+                                        <option value="fr">French</option>
+                                        <option value="de">German</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down select-arrow"></i>
                                 </div>
                             </div>
                         </div>
