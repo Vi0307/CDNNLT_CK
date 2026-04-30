@@ -279,6 +279,19 @@ input:focus {
     display: none !important;
 }
 
+.hidden-banner {
+    display: none !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
 /* Progress Area */
 .section-heading {
     font-size: 14px;
@@ -299,25 +312,46 @@ input:focus {
     margin-bottom: 24px;
     position: relative;
     z-index: 2;
+    transition: all 0.3s;
 }
 
 .step-icon {
     width: 24px;
     height: 24px;
-    background-color: var(--primary-color);
-    color: var(--white);
+    background-color: var(--border-color); /* Default gray */
+    color: var(--text-sidebar);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 10px;
     flex-shrink: 0;
+    transition: all 0.3s;
+}
+
+.step.active .step-icon {
+    background-color: var(--white);
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 0 4px var(--primary-light);
+}
+
+.step.completed .step-icon {
+    background-color: var(--primary-color);
+    color: var(--white);
+    border: none;
 }
 
 .step-content h5 {
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 4px;
+    color: var(--text-secondary); /* Default gray */
+    transition: color 0.3s;
+}
+
+.step.active .step-content h5,
+.step.completed .step-content h5 {
     color: var(--text-primary);
 }
 
@@ -331,10 +365,15 @@ input:focus {
     position: absolute;
     width: 2px;
     height: 24px;
-    background-color: var(--primary-color);
+    background-color: var(--border-color); /* Default gray */
     left: 19px;
     z-index: 1;
     transform: translateY(-24px);
+    transition: background-color 0.3s;
+}
+
+.step-line.completed-line {
+    background-color: var(--primary-color);
 }
 .step:nth-child(1) + .step-line { top: 24px; }
 .step:nth-child(3) + .step-line { top: 72px; }
@@ -551,4 +590,88 @@ input:focus {
 
 .article-text p:last-child {
     margin-bottom: 0;
+}
+
+/* Explain Popup */
+.explain-popup {
+    position: absolute;
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md), 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    width: 320px;
+    z-index: 1000;
+    transform: translateY(10px);
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+}
+
+.explain-popup.show {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--input-bg);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.popup-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 8px;
+}
+
+.popup-title i {
+    flex-shrink: 0;
+}
+
+.popup-title span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.popup-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+}
+
+.popup-close-btn:hover {
+    color: var(--text-primary);
+}
+
+.popup-body {
+    padding: 16px;
+}
+
+.popup-explain-btn {
+    background-color: var(--primary-color);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+}
+
+.explanation-content {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.5;
 }
