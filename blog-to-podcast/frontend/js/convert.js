@@ -14,13 +14,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentAudioUrl = null;
     let articleTitle = '';
 
-    // ── Form Submit ───────────────────────────────────────────────────────────
-    if (convertForm) {
-        convertForm.addEventListener('submit', async (e) => {
+    // ── Button Click ───────────────────────────────────────────────────────────
+    const convertBtn = document.getElementById('convertBtn');
+    if (convertBtn) {
+        convertBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             const url      = document.getElementById('articleUrl').value.trim();
             const language = document.getElementById('outputLanguage').value;
-            if (!url || !language) return;
+            if (!url || !language) {
+                alert("Vui lòng điền đủ URL và chọn ngôn ngữ (Output Language).");
+                return;
+            }
 
             actionArea.classList.add('hidden');
             progressArea.classList.remove('hidden');

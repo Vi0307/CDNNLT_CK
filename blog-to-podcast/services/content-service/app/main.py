@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from schemas import CrawlRequest, CrawlResponse
-from service import crawl_url
-from config import settings
+from app.schemas import CrawlRequest, CrawlResponse
+from app.service import crawl_url
+from app.config import settings
 
 app = FastAPI(title="Content Service", version="1.0.0")
 
