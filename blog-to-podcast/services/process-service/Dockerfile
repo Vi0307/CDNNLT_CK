@@ -13,7 +13,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ---- Copy toàn bộ source code ----
-COPY . .
+COPY app/ .
 
 # ---- Expose port 8002 ----
 EXPOSE 8002
