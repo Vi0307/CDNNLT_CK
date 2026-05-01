@@ -64,7 +64,7 @@
 
                 <!-- Form Card -->
                 <div class="card form-card">
-                    <form id="convertForm">
+                    <div id="convertForm" class="form-container">
                         <div class="form-group full-width">
                             <label>Article URL</label>
                             <div class="input-wrapper">
@@ -80,12 +80,24 @@
                                     <i class="fas fa-microphone input-icon"></i>
                                     <select class="custom-select" id="voiceProfile" required>
                                         <option value="" disabled selected>Select Voice</option>
-                                        <option value="alloy">Alloy (Neutral)</option>
-                                        <option value="echo">Echo (Male)</option>
-                                        <option value="fable">Fable (British)</option>
-                                        <option value="onyx">Onyx (Deep)</option>
-                                        <option value="nova">Nova (Female)</option>
-                                        <option value="shimmer">Shimmer (Clear)</option>
+                                        <optgroup label="Tiếng Việt">
+                                            <option value="vi-VN-HoaiMyNeural">HoaiMy (Nữ)</option>
+                                            <option value="vi-VN-NamMinhNeural">NamMinh (Nam)</option>
+                                        </optgroup>
+                                        <optgroup label="English">
+                                            <option value="en-US-AriaNeural">Aria (Female)</option>
+                                            <option value="en-US-GuyNeural">Guy (Male)</option>
+                                            <option value="en-GB-SoniaNeural">Sonia (British)</option>
+                                        </optgroup>
+                                        <optgroup label="Español">
+                                            <option value="es-ES-ElviraNeural">Elvira (Femenino)</option>
+                                        </optgroup>
+                                        <optgroup label="Français">
+                                            <option value="fr-FR-DeniseNeural">Denise (Féminin)</option>
+                                        </optgroup>
+                                        <optgroup label="Deutsch">
+                                            <option value="de-DE-KatjaNeural">Katja (Weiblich)</option>
+                                        </optgroup>
                                     </select>
                                     <i class="fas fa-chevron-down select-arrow"></i>
                                 </div>
@@ -109,7 +121,7 @@
 
                         <!-- Initial Action Button -->
                         <div id="actionArea">
-                            <button type="submit" class="primary-btn btn-full">Convert to Podcast <i
+                            <button type="button" id="convertBtn" class="primary-btn btn-full">Convert to Podcast <i
                                     class="fas fa-arrow-right"></i></button>
                         </div>
 
@@ -156,7 +168,7 @@
                                     Now</button>
                             </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
 
                 <!-- AI Assistant Area (Hidden Initially) -->
