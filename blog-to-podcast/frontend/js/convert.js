@@ -6,8 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultBanner = document.getElementById('resultBanner');
 
     const CONTENT_SERVICE = 'http://localhost:8001';
-    const PROCESS_SERVICE = 'http://localhost:8002';
-    const TTS_SERVICE     = 'http://localhost:8003';
+    const PROCESS_SERVICE = 'http://localhost:8000';
+    const TTS_SERVICE     = 'http://localhost:8002';
 
     // Holds real audio state
     let currentAudio = null;
@@ -15,53 +15,29 @@ document.addEventListener('DOMContentLoaded', () => {
     let articleTitle = '';
 
     // ── Form Submit ───────────────────────────────────────────────────────────
-    const convertBtn = document.getElementById('convertBtn');
-    const urlInput = document.getElementById('articleUrl');
-    const langInput = document.getElementById('outputLanguage');
-    const voiceInput = document.getElementById('voiceProfile');
-
-    // Add Enter key support
-    [urlInput, langInput, voiceInput].forEach(input => {
-        if (input) {
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (convertBtn && !actionArea.classList.contains('hidden')) {
-                        convertBtn.click();
-                    }
-                }
-            });
-        }
-    });
-
-    if (convertBtn) {
-        convertBtn.addEventListener('click', async (e) => {
+    if (convertForm) {
+        convertForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            // Validate inputs manually since we removed the form tag
-            if (!urlInput.value) { urlInput.reportValidity(); return; }
-            if (!voiceInput.value) { voiceInput.reportValidity(); return; }
-            if (!langInput.value) { langInput.reportValidity(); return; }
-
-            const url      = urlInput.value.trim();
-            const language = langInput.value;
-            const voice    = voiceInput.value;
+            const url      = document.getElementById('articleUrl').value.trim();
+            const language = document.getElementById('outputLanguage').value;
+            if (!url || !language) return;
 
             actionArea.classList.add('hidden');
             progressArea.classList.remove('hidden');
 
             try {
-                await runPipeline(url, language, voice);
+                await runPipeline(url, language);
             } catch (err) {
-                console.error('Pipeline error:', err);
-                // Show error inline, do NOT reset the UI
-                showPipelineError(err.message);
+                console.error(err);
+                actionArea.classList.remove('hidden');
+                progressArea.classList.add('hidden');
+                alert(`Lỗi: ${err.message}`);
             }
         });
     }
 
     // ── Pipeline ──────────────────────────────────────────────────────────────
-    async function runPipeline(url, language, voice) {
+    async function runPipeline(url, language) {
 
         // Step 0 — Crawl
         activateStep(0);
@@ -108,21 +84,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Step 2 — TTS
         activateStep(2);
-        let ttsData;
-        try {
-            const ttsRes = await fetch(`${TTS_SERVICE}/tts`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: ttsText, language, voice })
-            });
-            if (!ttsRes.ok) {
-                const e = await ttsRes.json().catch(() => ({}));
-                throw new Error(e.detail || `TTS service: ${ttsRes.status}`);
-            }
-            ttsData = await ttsRes.json();
-        } catch (err) {
-            throw new Error(`Audio generation failed: ${err.message}`);
+        const ttsRes = await fetch(`${TTS_SERVICE}/tts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: ttsText, language })
+        });
+        if (!ttsRes.ok) {
+            const e = await ttsRes.json().catch(() => ({}));
+            throw new Error(e.detail || `TTS service: ${ttsRes.status}`);
         }
+        const ttsData = await ttsRes.json();
         // TTSResponse: { status, audio_url, message }  audio_url = "/download/<uuid>.mp3"
         currentAudioUrl = `${TTS_SERVICE}${ttsData.audio_url}`;
         completeStep(2);
@@ -131,21 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const playerTitleEl = document.getElementById('playerTitle');
         if (playerTitleEl) playerTitleEl.textContent = articleTitle;
 
-        // Show result banner — query play-btn fresh here since banner was hidden on load
+        // Show result banner
         resultBanner.classList.remove('hidden-banner');
         resultBanner.classList.add('fade-in');
-
-        // Wire up play button now that it's visible
-        const freshPlayBtn = resultBanner.querySelector('.play-btn');
-        if (freshPlayBtn) {
-            freshPlayBtn.addEventListener('click', () => {
-                if (!currentAudioUrl) return;
-                globalAudioPlayer.classList.remove('hidden');
-                setTimeout(() => globalAudioPlayer.classList.add('show'), 10);
-                getAudio().play();
-                setPlayingUI(true);
-            });
-        }
 
         // Pre-load audio to get real duration
         const tempAudio = new Audio(currentAudioUrl);
@@ -155,8 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const s = (dur % 60).toString().padStart(2, '0');
             const durationEl = resultBanner.querySelector('.result-text p');
             if (durationEl) durationEl.textContent = `Duration: ${m}:${s}`;
-            const timeTotalEl = document.querySelector('.time-total');
-            if (timeTotalEl) timeTotalEl.textContent = `${m}:${s}`;
+            document.querySelector('.time-total').textContent = `${m}:${s}`;
         });
 
         // Show AI assistant
@@ -164,20 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
             aiAssistantArea.classList.remove('hidden');
             aiAssistantArea.classList.add('fade-in');
         }, 500);
-    }
-
-    // ── Error display ─────────────────────────────────────────────────────────
-    function showPipelineError(message) {
-        // Remove any existing error
-        const existing = document.getElementById('pipelineError');
-        if (existing) existing.remove();
-
-        const el = document.createElement('div');
-        el.id = 'pipelineError';
-        el.style.cssText = 'margin-top:16px;padding:12px 16px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:14px;display:flex;align-items:center;gap:10px;';
-        el.innerHTML = `<i class="fas fa-exclamation-circle"></i><span>${message}</span>
-            <button type="button" onclick="location.reload()" style="margin-left:auto;background:#dc2626;color:#fff;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:13px;">Thử lại</button>`;
-        progressArea.appendChild(el);
     }
 
     // ── Step helpers ──────────────────────────────────────────────────────────
