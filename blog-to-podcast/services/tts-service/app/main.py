@@ -22,7 +22,7 @@ async def create_tts(request: TTSRequest):
             raise HTTPException(status_code=400, detail="Nội dung văn bản (text) không được để trống")
 
         # Gọi service để sinh file audio
-        filename, _ = generate_audio_file(text=request.text, language=request.language)
+        filename, _ = await generate_audio_file(text=request.text, language=request.language, voice=request.voice)
         
         # Trả về URL để truy cập hoặc tải file. 
         # Trong thực tế URL này sẽ được mount thông qua Nginx hoặc public endpoint.
