@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 import os
 
 from app.config import AUDIO_DIR
@@ -9,6 +10,13 @@ from app.service import generate_audio_file
 app = FastAPI(
     title="Audio Service (TTS)",
     description="Microservice API để chuyển đổi văn bản (text) sang âm thanh (mp3)"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.post("/tts", response_model=TTSResponse)

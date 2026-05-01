@@ -1,6 +1,8 @@
 import random
-from config import settings
-from schemas import CrawlResponse
+import requests
+from bs4 import BeautifulSoup
+from app.config import settings
+from app.schemas import CrawlResponse
 
 _MOCK_ARTICLES = [
     {
