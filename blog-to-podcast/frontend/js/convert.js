@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const CONTENT_SERVICE = 'http://localhost:8001';
     const PROCESS_SERVICE = 'http://localhost:8000';
-    const TTS_SERVICE     = 'http://localhost:8002';
+    const TTS_SERVICE = 'http://localhost:8002';
 
     // Holds real audio state
     let currentAudio = null;
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (convertBtn) {
         convertBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            const url      = document.getElementById('articleUrl').value.trim();
+            const url = document.getElementById('articleUrl').value.trim();
             const language = document.getElementById('outputLanguage').value;
             if (!url || !language) {
                 alert("Vui lòng điền đủ URL và chọn ngôn ngữ (Output Language).");
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const crawlData = await crawlRes.json();
         // CrawlResponse: { url, title, text, word_count, is_mock }
         const rawText = crawlData.text;
-        articleTitle  = crawlData.title || 'Generated Podcast';
+        articleTitle = crawlData.title || 'Generated Podcast';
         completeStep(0);
 
         // Step 1 — AI Processing (process-service)
@@ -161,10 +161,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Explain Popup ─────────────────────────────────────────────────────────
     const articleTextContainer = document.querySelector('.article-text');
-    const explainPopup    = document.getElementById('explainPopup');
+    const explainPopup = document.getElementById('explainPopup');
     const popupSelectedText = document.getElementById('popupSelectedText');
-    const closePopupBtn   = document.getElementById('closePopupBtn');
-    const explainTermBtn  = document.getElementById('explainTermBtn');
+    const closePopupBtn = document.getElementById('closePopupBtn');
+    const explainTermBtn = document.getElementById('explainTermBtn');
     const explanationText = document.getElementById('explanationText');
 
     function hidePopup() {
@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selectedText.length > 0 && articleTextContainer.contains(selection.anchorNode)) {
                 const rect = selection.getRangeAt(0).getBoundingClientRect();
                 explainPopup.style.left = `${Math.max(10, rect.left + window.scrollX + rect.width / 2 - 160)}px`;
-                explainPopup.style.top  = `${rect.bottom + window.scrollY + 10}px`;
+                explainPopup.style.top = `${rect.bottom + window.scrollY + 10}px`;
                 popupSelectedText.textContent = `"${selectedText}"`;
                 explainTermBtn.classList.remove('hidden');
                 explanationText.classList.add('hidden');
@@ -215,15 +215,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Audio Player ──────────────────────────────────────────────────────────
-    const playBtn           = document.querySelector('.play-btn');
+    const playBtn = document.querySelector('.play-btn');
     const globalAudioPlayer = document.getElementById('globalAudioPlayer');
-    const closePlayerBtn    = document.getElementById('closePlayerBtn');
-    const playerPlayBtn     = document.getElementById('playerPlayBtn');
-    const progressBarFill   = document.querySelector('.progress-bar-fill');
-    const progressBarThumb  = document.querySelector('.progress-bar-thumb');
+    const closePlayerBtn = document.getElementById('closePlayerBtn');
+    const playerPlayBtn = document.getElementById('playerPlayBtn');
+    const progressBarFill = document.querySelector('.progress-bar-fill');
+    const progressBarThumb = document.querySelector('.progress-bar-thumb');
     const progressBarContainer = document.querySelector('.progress-bar-container');
-    const timeCurrent       = document.querySelector('.time-current');
-    const timeTotal         = document.querySelector('.time-total');
+    const timeCurrent = document.querySelector('.time-current');
+    const timeTotal = document.querySelector('.time-total');
 
     function getAudio() {
         if (!currentAudio || currentAudio.src !== currentAudioUrl) {
@@ -235,8 +235,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!dur) return;
                 const cur = currentAudio.currentTime;
                 const pct = (cur / dur) * 100;
-                progressBarFill.style.width  = `${pct}%`;
-                progressBarThumb.style.left  = `${pct}%`;
+                progressBarFill.style.width = `${pct}%`;
+                progressBarThumb.style.left = `${pct}%`;
                 const m = Math.floor(cur / 60);
                 const s = Math.floor(cur % 60).toString().padStart(2, '0');
                 timeCurrent.textContent = `${m}:${s}`;
@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!currentAudioUrl) return;
             const audio = getAudio();
             if (audio.paused) { audio.play(); setPlayingUI(true); }
-            else              { audio.pause(); setPlayingUI(false); }
+            else { audio.pause(); setPlayingUI(false); }
         });
 
         closePlayerBtn.addEventListener('click', () => {
