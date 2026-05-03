@@ -1,30 +1,62 @@
 import logging
+import json
+import google.generativeai as genai
 from app.schemas import ProcessRequest, ProcessResponse
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+def process_text(request: ProcessRequest) -> ProcessResponse:
+    if settings.use_mock:
+        return process_text_mock(request)
+    return process_text_with_gemini(request)
+
+def process_text_with_gemini(request: ProcessRequest) -> ProcessResponse:
+    if not settings.gemini_api_key:
+        return process_text_mock(request)
+
+    try:
+        genai.configure(api_key=settings.gemini_api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt = f"""
+        Bạn là một biên tập viên chuyên nghiệp. Hãy xử lý nội dung bài viết dưới đây (Ngôn ngữ: {request.language}):
+        
+        NỘI DUNG:
+        {request.text}
+        
+        YÊU CẦU:
+        1. Viết bản tóm tắt (summary) ngắn gọn các ý chính.
+        2. Viết kịch bản podcast (script) tự nhiên, lôi cuốn theo phong cách dẫn chương trình.
+        
+        TRẢ VỀ ĐỊNH DẠNG JSON:
+        {{
+          "summary": "...",
+          "script": "..."
+        }}
+        """
+        
+        response = model.generate_content(prompt)
+        # Loại bỏ các ký tự markdown nếu có
+        clean_text = response.text.replace("```json", "").replace("```", "").strip()
+        data = json.loads(clean_text)
+        
+        return ProcessResponse(
+            request_id=request.request_id,
+            summary=data.get("summary", ""),
+            script=data.get("script", ""),
+            status="done",
+            language=request.language
+        )
+    except Exception as e:
+        logger.error(f"Gemini Error: {e}")
+        return process_text_mock(request)
+
 def process_text_mock(request: ProcessRequest) -> ProcessResponse:
-    """
-    (Hiện tại dùng MOCK DATA — không gọi AI API thật)
-    """
-    logger.info(
-        f"[request_id={request.request_id}] Nhận request — độ dài text: {len(request.text)} ký tự"
-    )
-    
-    preview = request.text[:50].strip()
-
-    summary = f"Đây là tóm tắt mẫu cho bài viết: {preview}"
-    script = (
-        f"Xin chào các bạn, hôm nay chúng ta cùng tìm hiểu về chủ đề sau đây. "
-        f"{summary}"
-    )
-
-    logger.info(f"[request_id={request.request_id}] Xử lý hoàn tất — status: done")
-
     return ProcessResponse(
         request_id=request.request_id,
-        summary=summary,
-        script=script,
+        summary="Đây là tóm tắt giả lập cho mục đích kiểm thử.",
+        script="Xin chào, đây là kịch bản podcast giả lập.",
         status="done",
-        language=request.language,
+        language=request.language
     )
