@@ -1,12 +1,11 @@
-version: '3.8'
-
 services:
   content-service:
     build: ./services/content-service
     ports:
       - "8001:8001"
     environment:
-      - USE_MOCK=true
+      # USE_MOCK=false: crawl URL thật. true: dữ liệu mẫu. Mặc định false (xem .env).
+      - USE_MOCK=${USE_MOCK:-false}
     volumes:
       - ./services/content-service/app:/app/app
 
@@ -15,6 +14,11 @@ services:
     ports:
       - "8000:8002"
     environment:
+      # Key đặt trong file .env (cùng thư mục với compose), không ghi key vào repo
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      # false + có key → Gemini thật. true → luôn mock. Không key → vẫn mock dù false.
+      - USE_MOCK=${USE_MOCK:-false}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
       - GEMINI_API_KEY=
       - USE_MOCK=true
     volumes:
@@ -25,7 +29,7 @@ services:
     ports:
       - "8005:8003"
     environment:
-      - USE_MOCK=true
+      - USE_MOCK=${USE_MOCK:-false}
     volumes:
       - ./services/tts-service/app:/app/app
       - ./services/tts-service/audio_output:/app/audio_output

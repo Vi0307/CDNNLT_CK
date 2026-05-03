@@ -36,3 +36,4 @@ class ProcessResponse(BaseModel):
     script: str
     status: str
     language: str
+    source: str  # "gemini" | "mock"
