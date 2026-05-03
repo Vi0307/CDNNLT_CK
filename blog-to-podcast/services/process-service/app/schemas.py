@@ -37,3 +37,65 @@ class ProcessResponse(BaseModel):
     status: str
     language: str
     source: str  # "gemini" | "mock"
+
+
+class AskRequest(BaseModel):
+    question: str
+    context: str
+    language: str = "vi"
+
+    @field_validator("question")
+    @classmethod
+    def question_must_not_be_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("question field is required")
+        return v
+
+    @field_validator("context")
+    @classmethod
+    def context_must_not_be_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("context field is required")
+        return v
+
+    @field_validator("language")
+    @classmethod
+    def validate_ask_language(cls, v: str) -> str:
+        return v if v in SUPPORTED_LANGUAGES else "vi"
+
+
+class AskResponse(BaseModel):
+    answer: str
+    language: str
+    source: str
+
+
+class ExplainRequest(BaseModel):
+    term: str
+    context: str
+    language: str = "vi"
+
+    @field_validator("term")
+    @classmethod
+    def term_must_not_be_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("term field is required")
+        return v
+
+    @field_validator("context")
+    @classmethod
+    def explain_context_must_not_be_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("context field is required")
+        return v
+
+    @field_validator("language")
+    @classmethod
+    def validate_explain_language(cls, v: str) -> str:
+        return v if v in SUPPORTED_LANGUAGES else "vi"
+
+
+class ExplainResponse(BaseModel):
+    explanation: str
+    language: str
+    source: str

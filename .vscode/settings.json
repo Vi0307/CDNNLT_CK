@@ -1,4 +1,10 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:conda",
-    "python-envs.defaultPackageManager": "ms-python.python:conda"
+    "python-envs.defaultPackageManager": "ms-python.python:conda",
+    "liveServer.settings.ignoreFiles": [
+        "**/.vscode/**",
+        "**/.git/**",
+        "**/services/**/__pycache__/**",
+        "**/services/tts-service/audio_output/**"
+    ]
 }

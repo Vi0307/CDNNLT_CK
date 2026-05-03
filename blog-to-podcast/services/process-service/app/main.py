@@ -8,7 +8,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import setup_logging
-from app.schemas import ProcessRequest, ProcessResponse
+from app.schemas import (
+    AskRequest,
+    AskResponse,
+    ExplainRequest,
+    ExplainResponse,
+    ProcessRequest,
+    ProcessResponse,
+)
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -81,6 +88,35 @@ def _process_with_gemini(request: ProcessRequest) -> ProcessResponse:
         language=request.language,
         source="gemini",
     )
+
+
+def _answer_question_with_gemini(request: AskRequest) -> str:
+    prompt = f"""Bạn là trợ lý AI của ứng dụng chuyển blog thành podcast.
+Hãy trả lời câu hỏi dựa trên ngữ cảnh dưới đây một cách ngắn gọn, rõ ràng, đúng trọng tâm.
+Nếu ngữ cảnh không đủ thông tin, nói rõ điều đó thay vì bịa.
+Trả lời bằng ngôn ngữ: {request.language}.
+
+NGỮ CẢNH:
+{request.context}
+
+CÂU HỎI:
+{request.question}
+"""
+    return call_gemini(prompt)
+
+
+def _explain_term_with_gemini(request: ExplainRequest) -> str:
+    prompt = f"""Bạn là trợ lý AI giải thích thuật ngữ trong bài viết.
+Hãy giải thích thuật ngữ sau theo ngữ cảnh, dễ hiểu cho người mới, dài khoảng 3-5 câu.
+Trả lời bằng ngôn ngữ: {request.language}.
+
+THUẬT NGỮ:
+{request.term}
+
+NGỮ CẢNH:
+{request.context}
+"""
+    return call_gemini(prompt)
 
 
 # --- Khởi tạo ứng dụng FastAPI ---
@@ -156,3 +192,35 @@ def process_text_form(
     """Giống POST /process nhưng gửi form (multipart). Swagger có ô text lớn, tránh lỗi JSON khi dán báo."""
     request = ProcessRequest(text=text, language=language, request_id=request_id)
     return _handle_process(request)
+
+
+@app.post("/ask", response_model=AskResponse, tags=["Assistant"])
+def ask_question(request: AskRequest):
+    if _should_use_mock():
+        return AskResponse(
+            answer="Process service đang chạy mock mode, vui lòng cấu hình Gemini API để nhận câu trả lời AI thật.",
+            language=request.language,
+            source="mock",
+        )
+    try:
+        answer = _answer_question_with_gemini(request)
+        return AskResponse(answer=answer, language=request.language, source="gemini")
+    except Exception as e:
+        logger.error(f"Ask endpoint lỗi: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "Ask failed", "detail": str(e)})
+
+
+@app.post("/explain", response_model=ExplainResponse, tags=["Assistant"])
+def explain_term(request: ExplainRequest):
+    if _should_use_mock():
+        return ExplainResponse(
+            explanation="Process service đang chạy mock mode, vui lòng cấu hình Gemini API để nhận giải thích AI thật.",
+            language=request.language,
+            source="mock",
+        )
+    try:
+        explanation = _explain_term_with_gemini(request)
+        return ExplainResponse(explanation=explanation, language=request.language, source="gemini")
+    except Exception as e:
+        logger.error(f"Explain endpoint lỗi: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "Explain failed", "detail": str(e)})

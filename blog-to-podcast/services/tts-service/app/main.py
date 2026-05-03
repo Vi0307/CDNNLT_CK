@@ -14,6 +14,25 @@ app = FastAPI(
     description="Microservice API để chuyển đổi văn bản (text) sang âm thanh (mp3)"
 )
 
+SUPPORTED_LANGUAGES = [
+    {"code": "vi", "name": "Vietnamese"},
+    {"code": "en", "name": "English"},
+    {"code": "es", "name": "Spanish"},
+    {"code": "fr", "name": "French"},
+    {"code": "de", "name": "German"},
+]
+
+SUPPORTED_VOICES = [
+    {"id": "vi-VN-HoaiMyNeural", "name": "HoaiMy (Nữ)", "language": "vi"},
+    {"id": "vi-VN-NamMinhNeural", "name": "NamMinh (Nam)", "language": "vi"},
+    {"id": "en-US-AriaNeural", "name": "Aria (Female)", "language": "en"},
+    {"id": "en-US-GuyNeural", "name": "Guy (Male)", "language": "en"},
+    {"id": "en-GB-SoniaNeural", "name": "Sonia (British)", "language": "en"},
+    {"id": "es-ES-ElviraNeural", "name": "Elvira (Femenino)", "language": "es"},
+    {"id": "fr-FR-DeniseNeural", "name": "Denise (Féminin)", "language": "fr"},
+    {"id": "de-DE-KatjaNeural", "name": "Katja (Weiblich)", "language": "de"},
+]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -81,6 +100,13 @@ async def download_audio(filename: str):
         return FileResponse(path=filepath, media_type="audio/mpeg", filename=filename)
     else:
         raise HTTPException(status_code=404, detail="Không tìm thấy file âm thanh này")
+
+@app.get("/options")
+async def get_tts_options():
+    return {
+        "languages": SUPPORTED_LANGUAGES,
+        "voices": SUPPORTED_VOICES
+    }
 
 @app.get("/")
 async def root():
