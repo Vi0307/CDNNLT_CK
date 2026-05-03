@@ -14,13 +14,9 @@ services:
     ports:
       - "8000:8002"
     environment:
-      # Key đặt trong file .env (cùng thư mục với compose), không ghi key vào repo
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      # false + có key → Gemini thật. true → luôn mock. Không key → vẫn mock dù false.
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - USE_MOCK=${USE_MOCK:-false}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
-      - GEMINI_API_KEY=
-      - USE_MOCK=true
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
     volumes:
       - ./services/process-service/app:/app/app
 
@@ -30,6 +26,8 @@ services:
       - "8005:8003"
     environment:
       - USE_MOCK=${USE_MOCK:-false}
+      - AUDIO_DIR=${AUDIO_DIR:-audio_output}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
     volumes:
       - ./services/tts-service/app:/app/app
       - ./services/tts-service/audio_output:/app/audio_output
