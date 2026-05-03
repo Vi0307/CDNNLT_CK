@@ -1,5 +1,6 @@
 import logging
 import json
+import os
 import google.generativeai as genai
 from app.schemas import ProcessRequest, ProcessResponse
 from app.config import settings
@@ -17,7 +18,8 @@ def process_text_with_gemini(request: ProcessRequest) -> ProcessResponse:
 
     try:
         genai.configure(api_key=settings.gemini_api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model_name = (os.getenv("GEMINI_MODEL") or "gemini-2.5-flash").strip()
+        model = genai.GenerativeModel(model_name)
         
         prompt = f"""
         Bạn là một biên tập viên chuyên nghiệp. Hãy xử lý nội dung bài viết dưới đây (Ngôn ngữ: {request.language}):
@@ -46,7 +48,8 @@ def process_text_with_gemini(request: ProcessRequest) -> ProcessResponse:
             summary=data.get("summary", ""),
             script=data.get("script", ""),
             status="done",
-            language=request.language
+            language=request.language,
+            source="gemini",
         )
     except Exception as e:
         logger.error(f"Gemini Error: {e}")
@@ -58,5 +61,6 @@ def process_text_mock(request: ProcessRequest) -> ProcessResponse:
         summary="Đây là tóm tắt giả lập cho mục đích kiểm thử.",
         script="Xin chào, đây là kịch bản podcast giả lập.",
         status="done",
-        language=request.language
+        language=request.language,
+        source="mock",
     )
