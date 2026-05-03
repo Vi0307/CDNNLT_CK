@@ -1,12 +1,11 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
-class Settings:
-    use_mock: bool = os.getenv("USE_MOCK", "true").lower() == "true"
+# API Key cho Google Cloud (dùng để gọi Text-to-Speech)
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 
-
-settings = Settings()
-
-# Thư mục lưu file mp3 (trong Docker volume thường mount ./audio_output → /app/audio_output)
-AUDIO_DIR = os.getenv("AUDIO_DIR", "audio_output")
+# Đảm bảo thư mục tồn tại khi import config
 os.makedirs(AUDIO_DIR, exist_ok=True)

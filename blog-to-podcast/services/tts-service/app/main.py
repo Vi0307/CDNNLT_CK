@@ -1,4 +1,6 @@
 from fastapi import FastAPI, HTTPException
+import webbrowser
+import threading
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -18,6 +20,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def open_swagger():
+    # Đợi server khởi động xong rồi mới mở trình duyệt
+    import time
+    time.sleep(1)
+    webbrowser.open_new_tab("http://127.0.0.1:8003/docs")
+
+@app.on_event("startup")
+def startup_event():
+    threading.Thread(target=open_swagger, daemon=True).start()
 
 @app.post("/tts", response_model=TTSResponse)
 async def create_tts(request: TTSRequest):

@@ -1,49 +1,78 @@
 import os
 import uuid
-from typing import Optional
+import base64
+import httpx
+from app.config import AUDIO_DIR, GOOGLE_API_KEY
 
-import edge_tts
+async def generate_audio_file(text: str, language: str, voice: str = None) -> tuple[str, str]:
+    if not voice:
+        # Mặc định sử dụng giọng cao cấp Neural2 của Google
+        if language == "vi":
+            voice = "vi-VN-Neural2-A"
+        elif language == "en":
+            voice = "en-US-Neural2-F"
+        else:
+            voice = "vi-VN-Neural2-A"
 
-from app.config import AUDIO_DIR, settings
-
-
-def _default_voice(language: str, voice: Optional[str]) -> str:
-    if voice:
-        return voice
-    lang = str(language).lower()
-    if lang in ("vi", "vietnamese"):
-        return "vi-VN-HoaiMyNeural"
-    return "en-US-GuyNeural"
-
-
-async def generate_audio_file(
-    text: str,
-    language: str,
-    voice: Optional[str] = None,
-):
-    """Sinh file mp3; mock hoặc Edge-TTS."""
-    if settings.use_mock:
-        return generate_mock_tts()
-
-    use_voice = _default_voice(language, voice)
     filename = f"{uuid.uuid4()}.mp3"
     filepath = os.path.join(AUDIO_DIR, filename)
     os.makedirs(AUDIO_DIR, exist_ok=True)
 
-    try:
-        communicate = edge_tts.Communicate(text, use_voice)
-        await communicate.save(filepath)
-        return filename, filepath
-    except Exception as e:
-        print(f"TTS Error: {e}")
-        return generate_mock_tts()
+    if not GOOGLE_API_KEY:
+        try:
+            import edge_tts
+            # Nếu Frontend truyền tên giọng Edge-TTS (kết thúc bằng Neural), ta sẽ dùng luôn giọng đó.
+            # Nếu không (hoặc truyền giọng của Google như Neural2), ta dùng giọng mặc định.
+            if voice and voice.endswith("Neural") and "Neural2" not in voice:
+                edge_voice = voice
+            else:
+                edge_voice = "vi-VN-HoaiMyNeural" if language == "vi" else "en-US-AriaNeural"
+                
+            communicate = edge_tts.Communicate(text, edge_voice)
+            await communicate.save(filepath)
+            print(f"Mocking TTS with edge-tts (No API Key). Saved to {filepath}")
+            return filename, filepath
+        except ImportError:
+            print("edge-tts not installed. Creating empty dummy file.")
+            # Create a dummy silent/empty mp3 file for mock testing
+            with open(filepath, 'wb') as f:
+                pass
+            return filename, filepath
 
+    # Gọi Google Cloud TTS REST API
+    url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_API_KEY}"
 
-def generate_mock_tts():
-    filename = "mock_audio.mp3"
-    filepath = os.path.join(AUDIO_DIR, filename)
-    os.makedirs(AUDIO_DIR, exist_ok=True)
-    if not os.path.exists(filepath):
+    # Xác định language code từ tên voice (ví dụ: vi-VN-Neural2-A -> vi-VN)
+    language_code = "-".join(voice.split("-")[:2]) if "-" in voice else "vi-VN"
+
+    payload = {
+        "input": {
+            "text": text
+        },
+        "voice": {
+            "languageCode": language_code,
+            "name": voice
+        },
+        "audioConfig": {
+            "audioEncoding": "MP3"
+        }
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=payload, timeout=60.0)
+        if response.status_code != 200:
+            error_details = response.text
+            raise Exception(f"Google TTS API Error (Status {response.status_code}): {error_details}")
+
+        data = response.json()
+        audio_content = data.get("audioContent")
+        if not audio_content:
+            raise Exception("Google TTS API returned success but no audioContent.")
+
+        # audioContent là chuỗi base64
+        audio_bytes = base64.b64decode(audio_content)
+        # Ghi file
         with open(filepath, "wb") as f:
-            f.write(b"\x00" * 100)
+            f.write(audio_bytes)
     return filename, filepath
+
