@@ -1,1 +1,35 @@
+version: '3.8'
 
+services:
+  content-service:
+    build: ./services/content-service
+    ports:
+      - "8001:8001"
+    environment:
+      - USE_MOCK=true
+    volumes:
+      - ./services/content-service/app:/app/app
+
+  process-service:
+    build: ./services/process-service
+    ports:
+      - "8000:8002"
+    environment:
+      - GEMINI_API_KEY=
+      - USE_MOCK=true
+    volumes:
+      - ./services/process-service/app:/app/app
+
+  tts-service:
+    build: ./services/tts-service
+    ports:
+      - "8005:8003"
+    environment:
+      - USE_MOCK=true
+    volumes:
+      - ./services/tts-service/app:/app/app
+      - ./services/tts-service/audio_output:/app/audio_output
+
+networks:
+  default:
+    name: blog2cast-network

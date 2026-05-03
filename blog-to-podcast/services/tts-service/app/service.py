@@ -14,6 +14,16 @@ async def generate_audio_file(text: str, language: str, voice: str = None) -> tu
         else:
             voice = "vi-VN-Neural2-A"
 
+async def generate_tts(text: str, language: str):
+    """
+    Sử dụng Edge-TTS để chuyển văn bản thành giọng nói thật.
+    """
+    if settings.use_mock:
+        return generate_mock_tts()
+
+    # Chọn giọng đọc dựa trên ngôn ngữ
+    voice = "vi-VN-HoaiMyNeural" if language.lower() == "vietnamese" else "en-US-GuyNeural"
+    
     filename = f"{uuid.uuid4()}.mp3"
     filepath = os.path.join(AUDIO_DIR, filename)
     os.makedirs(AUDIO_DIR, exist_ok=True)
@@ -62,5 +72,4 @@ async def generate_audio_file(text: str, language: str, voice: str = None) -> tu
         # Ghi file
         with open(filepath, "wb") as f:
             f.write(audio_bytes)
-            
     return filename, filepath
