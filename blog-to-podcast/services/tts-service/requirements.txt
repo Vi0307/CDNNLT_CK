@@ -4,4 +4,4 @@ pydantic==2.5.2
 httpx>=0.25.0
 python-dotenv>=1.0.0
 python-multipart==0.0.6
-gTTS==2.5.1
+edge-tts==0.0.14
