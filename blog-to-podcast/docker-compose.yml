@@ -19,6 +19,8 @@ services:
       # false + có key → Gemini thật. true → luôn mock. Không key → vẫn mock dù false.
       - USE_MOCK=${USE_MOCK:-false}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - GEMINI_API_KEY=
+      - USE_MOCK=true
     volumes:
       - ./services/process-service/app:/app/app
 
