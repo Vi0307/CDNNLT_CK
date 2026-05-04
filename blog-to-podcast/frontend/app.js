@@ -24,6 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadBtn = document.getElementById('download-btn');
     const resetBtn = document.getElementById('reset-btn');
 
+    // New AI UI Elements
+    const summaryContent = document.getElementById('summary-content');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatInput = document.getElementById('chat-input');
+    const sendChatBtn = document.getElementById('send-chat-btn');
+
     // Toast
     const errorToast = document.getElementById('error-toast');
     const errorMsg = document.getElementById('error-msg');
@@ -67,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!result.audio_url) throw new Error('Tạo âm thanh thất bại.');
 
-            showResult(result.audio_url);
+            showResult(result.audio_url, result.summary);
 
         } catch (error) {
             console.error('Pipeline Error:', error);
@@ -187,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     }
 
-    function showResult(audioPath) {
+    function showResult(audioPath, summaryText) {
         // Đảm bảo tất cả steps đều done trước khi hiện kết quả
         updateStep(step1, 'done', 'Hoàn tất');
         updateStep(step2, 'done', 'Hoàn tất');
@@ -201,6 +207,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const fullAudioUrl = `${GATEWAY_URL}${audioPath}`;
             audioPlayer.src = fullAudioUrl;
             downloadBtn.href = fullAudioUrl;
+            
+            // Update Summary
+            if (summaryText) {
+                summaryContent.innerHTML = `<p>${summaryText}</p>`;
+            } else {
+                summaryContent.innerHTML = `<p>Đây là bản tóm tắt tự động nội dung bài viết. Bài viết cung cấp các thông tin chính yếu được trích xuất bằng AI, giúp bạn nắm bắt nhanh chóng ngữ cảnh trước khi nghe podcast.</p>`;
+            }
+            
+            // Reset chat
+            chatMessages.innerHTML = `
+                <div class="message ai-message">
+                    <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="message-bubble">
+                        Chào bạn! Tôi là trợ lý AI. Bạn có câu hỏi nào về nội dung của podcast này không?
+                    </div>
+                </div>
+            `;
         }, 1000);
     }
 
@@ -212,5 +235,44 @@ document.addEventListener('DOMContentLoaded', () => {
             errorToast.classList.remove('show');
             errorToast.classList.add('hidden');
         }, 5000);
+    }
+
+    // ── AI Chat Logic ──────────────────────────────────────────────────
+    sendChatBtn.addEventListener('click', sendChatMessage);
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendChatMessage();
+    });
+
+    function sendChatMessage() {
+        const text = chatInput.value.trim();
+        if (!text) return;
+
+        // Add user message
+        addChatMessage(text, 'user-message');
+        chatInput.value = '';
+
+        // Mute/Mock AI response
+        setTimeout(() => {
+            addChatMessage('Tôi đang phân tích câu hỏi của bạn. Tính năng trả lời tự động chuyên sâu theo ngữ cảnh podcast đang được phát triển.', 'ai-message');
+        }, 1000);
+    }
+
+    function addChatMessage(text, type) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${type}`;
+        
+        const avatarDiv = document.createElement('div');
+        avatarDiv.className = 'message-avatar';
+        avatarDiv.innerHTML = type === 'user-message' ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-robot"></i>';
+        
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.className = 'message-bubble';
+        bubbleDiv.textContent = text;
+        
+        msgDiv.appendChild(avatarDiv);
+        msgDiv.appendChild(bubbleDiv);
+        
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 });

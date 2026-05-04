@@ -124,25 +124,62 @@
 
         <!-- Result Section -->
         <section class="result-section hidden" id="result-container">
-            <div class="card glass-effect success-card">
-                <div class="success-icon-wrapper">
-                    <i class="fa-solid fa-circle-check"></i>
-                </div>
-                <h2>Podcast Đã Sẵn Sàng!</h2>
-                
-                <div class="audio-player-container">
-                    <audio id="audio-player" controls preload="metadata">
-                        Trình duyệt của bạn không hỗ trợ thẻ audio.
-                    </audio>
+            <div class="result-layout">
+                <!-- Left Column: Audio & Summary -->
+                <div class="result-left card glass-effect">
+                    <div class="success-header">
+                        <div class="success-icon-wrapper">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <h2>Podcast Đã Sẵn Sàng!</h2>
+                    </div>
+                    
+                    <div class="audio-player-container">
+                        <audio id="audio-player" controls preload="metadata">
+                            Trình duyệt của bạn không hỗ trợ thẻ audio.
+                        </audio>
+                    </div>
+
+                    <div class="summary-container">
+                        <h3><i class="fa-solid fa-file-lines"></i> Tóm tắt nội dung</h3>
+                        <div class="summary-content" id="summary-content">
+                            <!-- Summary text goes here -->
+                            <p>Đang tải tóm tắt...</p>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <a href="#" id="download-btn" class="btn btn-secondary" download>
+                            <i class="fa-solid fa-download"></i> Tải MP3
+                        </a>
+                        <button id="reset-btn" class="btn btn-outline">
+                            <i class="fa-solid fa-rotate-left"></i> Tạo Mới
+                        </button>
+                    </div>
                 </div>
 
-                <div class="action-buttons">
-                    <a href="#" id="download-btn" class="btn btn-secondary" download>
-                        <i class="fa-solid fa-download"></i> Tải Audio (MP3)
-                    </a>
-                    <button id="reset-btn" class="btn btn-outline">
-                        <i class="fa-solid fa-rotate-left"></i> Tạo Podcast Mới
-                    </button>
+                <!-- Right Column: AI Q&A Chat -->
+                <div class="result-right card glass-effect ai-chat-container">
+                    <div class="chat-header">
+                        <i class="fa-solid fa-robot"></i>
+                        <h3>Trợ lý AI - Hỏi đáp</h3>
+                    </div>
+                    
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message ai-message">
+                            <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
+                            <div class="message-bubble">
+                                Chào bạn! Tôi là trợ lý AI. Bạn có câu hỏi nào về nội dung của podcast này không?
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="Hỏi AI về podcast này..." autocomplete="off">
+                        <button id="send-chat-btn" class="btn-icon">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
