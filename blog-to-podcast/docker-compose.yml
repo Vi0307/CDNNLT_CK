@@ -4,7 +4,8 @@ services:
     ports:
       - "8001:8001"
     environment:
-      # USE_MOCK=false: crawl URL thật. true: dữ liệu mẫu. Mặc định false (xem .env).
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
       - USE_MOCK=${USE_MOCK:-false}
     volumes:
       - ./services/content-service/app:/app/app
@@ -14,17 +15,37 @@ services:
     ports:
       - "8000:8002"
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
       - USE_MOCK=${USE_MOCK:-false}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
+      - AI_SERVICE_URL=http://ai-service:8004
     volumes:
       - ./services/process-service/app:/app/app
+
+  ai-service:
+    build: ./services/ai-service
+    ports:
+      - "8004:8004"
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL:-https://1gw.gwai.cloud}
+      - ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+      - AI_TIMEOUT=${AI_TIMEOUT:-60}
+      - AI_PROVIDER=${AI_PROVIDER:-claude}
+    volumes:
+      - ./services/ai-service/app:/app/app
 
   tts-service:
     build: ./services/tts-service
     ports:
-      - "8005:8003"
+      - "8003:8003"
+    dns:
+      - 8.8.8.8
     environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
       - USE_MOCK=${USE_MOCK:-false}
       - AUDIO_DIR=${AUDIO_DIR:-audio_output}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}

@@ -2,8 +2,7 @@ import logging
 import os
 
 class Settings:
-    gemini_api_key: str = os.getenv("GEMINI_API_KEY", "") or ""
-    gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
+    ai_service_url: str = os.getenv("AI_SERVICE_URL", "http://ai-service:8004")
     use_mock: bool = os.getenv("USE_MOCK", "false").lower() == "true"
 
 settings = Settings()
