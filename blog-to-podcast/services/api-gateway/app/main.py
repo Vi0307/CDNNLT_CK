@@ -1,19 +1,10 @@
-import os
-import logging
-import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional
+import httpx
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-app = FastAPI(
-    title="Blog2Cast API Gateway",
-    description="Gateway điều phối toàn bộ pipeline: Crawl → AI Process → TTS",
-    version="1.0.0",
-)
+app = FastAPI(title="API Gateway", description="Cổng giao tiếp duy nhất cho Blog2Cast")
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,185 +12,86 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
 )
-
-# Internal service URLs (Docker internal network)
-CONTENT_SERVICE_URL = os.getenv("CONTENT_SERVICE_URL", "http://content-service:8001")
-PROCESS_SERVICE_URL = os.getenv("PROCESS_SERVICE_URL", "http://process-service:8002")
-TTS_SERVICE_URL     = os.getenv("TTS_SERVICE_URL",     "http://tts-service:8003")
-
-TTS_SAFE_MAX_CHARS = 4500
-
-
-# ---------- Schemas ----------
 
 class ConvertRequest(BaseModel):
     url: str
     language: str = "vi"
-    voice: Optional[str] = None
-
+    voice: str = "vi-VN-Neural2-A"
 
 class ConvertResponse(BaseModel):
     status: str
     audio_url: str
-    message: str
     summary: str
-    source: str
 
-
-# ---------- Health ----------
-
-@app.get("/health")
-def health():
-    return {
-        "status": "ok",
-        "service": "api-gateway",
-        "upstream": {
-            "content": CONTENT_SERVICE_URL,
-            "process": PROCESS_SERVICE_URL,
-            "tts":     TTS_SERVICE_URL,
-        },
-    }
-
-
-# ---------- Main Pipeline ----------
+CONTENT_SERVICE_URL = "http://content-service:8001"
+PROCESS_SERVICE_URL = "http://process-service:8002"
+TTS_SERVICE_URL = "http://tts-service:8003"
 
 @app.post("/convert", response_model=ConvertResponse)
-async def convert(request: ConvertRequest):
-    """
-    Pipeline đầy đủ: URL → Crawl → AI Script → TTS → audio_url
-    Frontend chỉ cần gọi endpoint này duy nhất.
-    """
-    timeout = httpx.Timeout(120.0, connect=10.0)
-
-    async with httpx.AsyncClient(timeout=timeout) as client:
-
-        # ── STEP 1: Crawl ──────────────────────────────────────────────
-        logger.info(f"[CRAWL] Fetching: {request.url}")
+async def convert_blog_to_podcast(request: ConvertRequest):
+    async with httpx.AsyncClient(timeout=300.0) as client:
+        # Bước 1: Crawl nội dung
         try:
-            crawl_res = await client.post(
-                f"{CONTENT_SERVICE_URL}/crawl",
-                json={"url": request.url},
-            )
-            crawl_res.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            detail = _extract_detail(e.response)
-            raise HTTPException(status_code=502, detail=f"[Crawl] {detail}")
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"[Crawl] Không kết nối được content-service: {e}")
+            content_res = await client.post(f"{CONTENT_SERVICE_URL}/crawl", json={"url": request.url})
+            content_res.raise_for_status()
+            content_data = content_res.json()
+            article_text = content_data.get("text")
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(status_code=exc.response.status_code, detail=f"Lỗi Crawl: {exc.response.text}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi kết nối Content Service: {str(e)}")
 
-        crawl_data = crawl_res.json()
-        raw_text = crawl_data.get("text", "")
-        if not raw_text:
-            raise HTTPException(status_code=422, detail="Không thể trích xuất nội dung từ URL này.")
+        if not article_text:
+             raise HTTPException(status_code=400, detail="Không thể lấy nội dung từ URL này.")
 
-        # ── STEP 2: AI Process ─────────────────────────────────────────
-        logger.info(f"[PROCESS] text length={len(raw_text)}, lang={request.language}")
+        # Bước 2: AI Tóm tắt và biên tập
         try:
-            process_res = await client.post(
-                f"{PROCESS_SERVICE_URL}/process",
-                json={"text": raw_text, "language": request.language},
-            )
+            process_res = await client.post(f"{PROCESS_SERVICE_URL}/process", json={"text": article_text, "language": request.language})
             process_res.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            detail = _extract_detail(e.response)
-            raise HTTPException(status_code=502, detail=f"[Process] {detail}")
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"[Process] Không kết nối được process-service: {e}")
+            process_data = process_res.json()
+            summary_text = process_data.get("summary")
+            script_text = process_data.get("script")
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(status_code=exc.response.status_code, detail=f"Lỗi AI Process: {exc.response.text}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi kết nối Process Service: {str(e)}")
 
-        process_data = process_res.json()
-        script = process_data.get("script", "")
-        summary = process_data.get("summary", "")
-        source = process_data.get("source", "unknown")
-        if not script:
-            raise HTTPException(status_code=422, detail="AI xử lý thất bại, không có kịch bản.")
-        if source == "mock" and os.getenv("USE_MOCK", "false").lower() != "true":
-            raise HTTPException(status_code=502, detail="Process service đang trả mock dù USE_MOCK=false.")
-
-        # ── STEP 3: TTS ────────────────────────────────────────────────
-        tts_text = _prepare_tts_text(script)
-        voice    = _resolve_voice(request.language, request.voice)
-
-        logger.info(f"[TTS] tts_text length={len(tts_text)}, voice={voice}")
+        # Bước 3: Text-to-Speech
         try:
-            tts_res = await client.post(
-                f"{TTS_SERVICE_URL}/tts",
-                json={"text": tts_text, "language": request.language, "voice": voice},
-            )
+            tts_res = await client.post(f"{TTS_SERVICE_URL}/tts", json={
+                "text": script_text,
+                "language": request.language,
+                "voice": request.voice
+            })
             tts_res.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            detail = _extract_detail(e.response)
-            raise HTTPException(status_code=502, detail=f"[TTS] {detail}")
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"[TTS] Không kết nối được tts-service: {e}")
+            tts_data = tts_res.json()
+            audio_url_raw = tts_data.get("audio_url") # /download/<filename>
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(status_code=exc.response.status_code, detail=f"Lỗi TTS: {exc.response.text}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Lỗi kết nối TTS Service: {str(e)}")
 
-        tts_data = tts_res.json()
-        audio_url = tts_data.get("audio_url", "")
-        if not audio_url:
-            raise HTTPException(status_code=502, detail="TTS không trả về audio_url.")
-
-        # audio_url dạng /download/<filename> — trả về đường dẫn qua gateway
         return ConvertResponse(
             status="success",
-            audio_url=audio_url,
-            message="Tạo podcast thành công",
-            summary=summary,
-            source=source,
+            audio_url=audio_url_raw,
+            summary=summary_text
         )
 
-
-# ---------- Audio proxy (forward /download/* về tts-service) ----------
-
 @app.get("/download/{filename}")
-async def proxy_download(filename: str):
-    """Proxy file audio từ tts-service về browser."""
-    from fastapi.responses import StreamingResponse
+async def download_audio(filename: str):
+    # Proxy or stream from TTS service
+    async def iterfile():
+        async with httpx.AsyncClient() as client:
+            async with client.stream("GET", f"{TTS_SERVICE_URL}/download/{filename}") as response:
+                if response.status_code != 200:
+                    yield b""
+                    return
+                async for chunk in response.aiter_bytes():
+                    yield chunk
 
-    timeout = httpx.Timeout(60.0)
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        try:
-            upstream = await client.get(f"{TTS_SERVICE_URL}/download/{filename}")
-            upstream.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(status_code=e.response.status_code, detail="File không tồn tại.")
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"Không lấy được file audio: {e}")
+    return StreamingResponse(iterfile(), media_type="audio/mpeg")
 
-    return StreamingResponse(
-        content=iter([upstream.content]),
-        media_type="audio/mpeg",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
-
-
-# ---------- Helpers ----------
-
-def _extract_detail(response: httpx.Response) -> str:
-    try:
-        return response.json().get("detail", response.text)
-    except Exception:
-        return response.text
-
-
-def _prepare_tts_text(raw: str) -> str:
-    import re
-    normalized = re.sub(r"```[\s\S]*?```", " ", raw)
-    normalized = re.sub(r"`[^`]*`", " ", normalized)
-    normalized = re.sub(r"[*_#>\-]", " ", normalized)
-    normalized = re.sub(r"\s+", " ", normalized).strip()
-    if not normalized:
-        raise HTTPException(status_code=422, detail="Kịch bản AI rỗng, không thể tổng hợp âm thanh.")
-    if len(normalized) > TTS_SAFE_MAX_CHARS:
-        normalized = normalized[:TTS_SAFE_MAX_CHARS]
-    return normalized
-
-
-def _resolve_voice(language: str, requested: Optional[str]) -> str:
-    vi_voices = {"vi-VN-Neural2-A", "vi-VN-Neural2-D"}
-    en_voices = {"en-US-Neural2-F", "en-US-Neural2-J"}
-    if language == "vi":
-        return requested if requested in vi_voices else "vi-VN-Neural2-A"
-    if language == "en":
-        return requested if requested in en_voices else "en-US-Neural2-F"
-    return requested or "vi-VN-Neural2-A"
+@app.get("/")
+def read_root():
+    return {"message": "API Gateway is running"}

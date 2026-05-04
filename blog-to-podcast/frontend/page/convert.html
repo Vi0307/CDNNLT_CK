@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog2Cast | Premium AI Podcast</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../css/convert.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <div class="glass-card">
+            <header>
+                <h1>Blog2Cast</h1>
+                <p class="subtitle">Premium AI Podcast Generator</p>
+            </header>
+            <main>
+                <div class="input-group">
+                    <input type="text" id="articleUrl" placeholder="Dán link bài báo vào đây..." autocomplete="off">
+                </div>
+                <div class="config-row">
+                    <select id="voiceProfile">
+                        <option value="vi-VN-HoaiMyNeural">Hoài My (Nữ)</option>
+                        <option value="vi-VN-NamMinhNeural">Nam Minh (Nam)</option>
+                    </select>
+                    <select id="outputLanguage">
+                        <option value="vi">Tiếng Việt</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <button id="generateBtn" type="button" class="btn-primary">
+                    <span class="btn-text">Bắt đầu chuyển đổi</span>
+                    <div class="spinner" id="btnSpinner"></div>
+                </button>
+                <div id="statusArea" class="status-area">
+                    <div class="step-item" id="step-crawl">
+                        <div class="step-icon">1</div>
+                        <div class="step-text">
+                            <h4>Đang đọc nội dung</h4>
+                        </div>
+                    </div>
+                    <div class="step-item" id="step-ai">
+                        <div class="step-icon">2</div>
+                        <div class="step-text">
+                            <h4>AI đang xử lý</h4>
+                        </div>
+                    </div>
+                    <div class="step-item" id="step-tts">
+                        <div class="step-icon">3</div>
+                        <div class="step-text">
+                            <h4>Đang tạo giọng nói</h4>
+                        </div>
+                    </div>
+                </div>
+                <div id="resultArea" class="result-area">
+                    <div class="podcast-player">
+                        <audio id="audioPlayer" controls></audio>
+                    </div>
+                    <div class="summary-card" id="summaryText"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            HOST: 'localhost',
+            ENDPOINTS: {
+                CONTENT: 'http://localhost:8001/crawl',
+                PROCESS: 'http://localhost:8000/process',
+                TTS: 'http://localhost:8003/tts'
+            }
+        };
+
+        const generateBtn = document.getElementById('generateBtn');
+        const articleUrlInput = document.getElementById('articleUrl');
+        const voiceSelect = document.getElementById('voiceProfile');
+        const langSelect = document.getElementById('outputLanguage');
+        const statusArea = document.getElementById('statusArea');
+        const resultArea = document.getElementById('resultArea');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const summaryText = document.getElementById('summaryText');
+
+        const steps = {
+            crawl: document.getElementById('step-crawl'),
+            ai: document.getElementById('step-ai'),
+            tts: document.getElementById('step-tts')
+        };
+
+        // Reset step indicators
+        const resetSteps = () => {
+            Object.values(steps).forEach(step => {
+                step.classList.remove('active');
+                step.classList.remove('completed');
+            });
+        };
+
+        generateBtn.addEventListener('click', async () => {
+            const url = articleUrlInput.value.trim();
+            if (!url) return alert('Vui lòng nhập URL bài báo');
+
+            document.getElementById('btnSpinner').style.display = 'inline-block';
+            statusArea.style.display = 'flex';
+            resultArea.style.display = 'none';
+            resetSteps();
+
+            try {
+                // Step 1: Lấy nội dung
+                steps.crawl.classList.add('active');
+                const cRes = await fetch(CONFIG.ENDPOINTS.CONTENT, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                if (!cRes.ok) throw new Error('Không thể lấy nội dung bài báo');
+                const cData = await cRes.json();
+                steps.crawl.classList.replace('active', 'completed');
+
+                // Step 2: Xử lý & Tóm tắt AI
+                steps.ai.classList.add('active');
+                const aRes = await fetch(CONFIG.ENDPOINTS.PROCESS, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: cData.text, language: langSelect.value })
+                });
+                if (!aRes.ok) throw new Error('AI không thể xử lý nội dung');
+                const aData = await aRes.json();
+                steps.ai.classList.replace('active', 'completed');
+
+                // Step 3: Tạo Audio (TTS)
+                steps.tts.classList.add('active');
+                const tRes = await fetch(CONFIG.ENDPOINTS.TTS, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: aData.script, language: langSelect.value, voice: voiceSelect.value })
+                });
+                if (!tRes.ok) throw new Error('Lỗi trong quá trình tạo Audio');
+                const tData = await tRes.json();
+
+                if (tData.status === 'success') {
+                    // Update UI with results
+                    audioPlayer.src = `http://localhost:8005${tData.audio_url}`;
+                    summaryText.innerText = aData.summary;
+                    resultArea.style.display = 'flex';
+                    steps.tts.classList.replace('active', 'completed');
+                } else {
+                    throw new Error(tData.message || 'TTS Failed');
+                }
+            } catch (e) {
+                alert('Lỗi: ' + e.message);
+                resetSteps();
+                statusArea.style.display = 'none';
+            } finally {
+                document.getElementById('btnSpinner').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+
+</html>
