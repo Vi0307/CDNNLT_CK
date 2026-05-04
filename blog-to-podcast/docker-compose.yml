@@ -1,4 +1,23 @@
 services:
+  # ── API Gateway (điểm vào duy nhất cho browser/frontend) ──────────────
+  api-gateway:
+    build: ./services/api-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - CONTENT_SERVICE_URL=http://content-service:8001
+      - PROCESS_SERVICE_URL=http://process-service:8002
+      - TTS_SERVICE_URL=http://tts-service:8003
+    depends_on:
+      - content-service
+      - process-service
+      - tts-service
+    volumes:
+      - ./services/api-gateway/app:/app/app
+
+  # ── Content Service (crawl URL) ────────────────────────────────────────
   content-service:
     build: ./services/content-service
     ports:
@@ -10,10 +29,11 @@ services:
     volumes:
       - ./services/content-service/app:/app/app
 
+  # ── Process Service (AI script) ────────────────────────────────────────
   process-service:
     build: ./services/process-service
     ports:
-      - "8000:8002"
+      - "8002:8002"
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
@@ -22,6 +42,7 @@ services:
     volumes:
       - ./services/process-service/app:/app/app
 
+  # ── AI Service (Anthropic/Claude) ──────────────────────────────────────
   ai-service:
     build: ./services/ai-service
     ports:
@@ -37,6 +58,7 @@ services:
     volumes:
       - ./services/ai-service/app:/app/app
 
+  # ── TTS Service (Google TTS / edge-tts) ───────────────────────────────
   tts-service:
     build: ./services/tts-service
     ports:
