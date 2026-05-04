@@ -1,5 +1,14 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda",
-    "liveServer.settings.port": 5501
+    "liveServer.settings.port": 5501,
+    "liveServer.settings.ignoreFiles": [
+        "**/*.mp3",
+        "**/*.wav",
+        "**/__pycache__/**",
+        "**/*.pyc",
+        "**/audio_output/**",
+        "**/.git/**",
+        "**/node_modules/**"
+    ]
 }

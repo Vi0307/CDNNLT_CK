@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog to Podcast AI Converter</title>
+    <!-- Meta Descriptions cho SEO -->
+    <meta name="description" content="Chuyển đổi bài viết blog, tin tức thành podcast audio chất lượng cao bằng AI với giọng đọc tự nhiên.">
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Background Elements -->
+    <div class="bg-effects">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <main class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-podcast"></i>
+                </div>
+                <h1>Blog<span>2</span>Cast</h1>
+            </div>
+            <p class="tagline">Biến mọi bài viết thành trải nghiệm âm thanh tuyệt vời</p>
+        </header>
+
+        <!-- Main Form Card -->
+        <section class="card glass-effect form-section" id="form-container">
+            <form id="convert-form" novalidate>
+                    <div class="input-group">
+                    <label for="url-input">Đường dẫn bài viết (URL)</label>
+                    <div class="input-field">
+                        <i class="fa-solid fa-link icon-left"></i>
+                        <input type="url" id="url-input" placeholder="https://vnexpress.net/bai-viet-cua-ban.html" required autocomplete="off">
+                        <div class="input-highlight"></div>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <div class="input-group half">
+                        <label for="language-select">Ngôn ngữ</label>
+                        <div class="select-field">
+                            <i class="fa-solid fa-globe icon-left"></i>
+                            <select id="language-select">
+                                <option value="vi">Tiếng Việt</option>
+                                <option value="en">English</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down icon-right"></i>
+                        </div>
+                    </div>
+                    <div class="input-group half">
+                        <label for="voice-select">Giọng AI</label>
+                        <div class="select-field">
+                            <i class="fa-solid fa-waveform-lines icon-left"></i>
+                            <select id="voice-select">
+                                <option value="vi-VN-Neural2-A">Giọng Nữ (Miền Nam)</option>
+                                <option value="vi-VN-Neural2-D">Giọng Nam (Miền Bắc)</option>
+                                <option value="en-US-Neural2-F">Female (US English)</option>
+                                <option value="en-US-Neural2-J">Male (US English)</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down icon-right"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-glow" id="submit-btn">
+                    <span class="btn-text">Bắt đầu tạo Podcast</span>
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <div class="loader-spinner hidden" id="btn-loader"></div>
+                </button>
+            </form>
+        </section>
+
+        <!-- Progress Tracker -->
+        <section class="progress-section hidden" id="progress-container">
+            <div class="steps-wrapper glass-effect">
+                <div class="step pending" id="step-1">
+                    <div class="step-icon-box">
+                        <i class="fa-solid fa-spider"></i>
+                        <div class="ring"></div>
+                    </div>
+                    <div class="step-info">
+                        <h3>Trích xuất nội dung</h3>
+                        <p class="status-text">Đang chờ...</p>
+                    </div>
+                </div>
+
+                <div class="step-divider"></div>
+
+                <div class="step pending" id="step-2">
+                    <div class="step-icon-box">
+                        <i class="fa-solid fa-brain"></i>
+                        <div class="ring"></div>
+                    </div>
+                    <div class="step-info">
+                        <h3>Biên tập kịch bản AI</h3>
+                        <p class="status-text">Đang chờ...</p>
+                    </div>
+                </div>
+
+                <div class="step-divider"></div>
+
+                <div class="step pending" id="step-3">
+                    <div class="step-icon-box">
+                        <i class="fa-solid fa-compact-disc"></i>
+                        <div class="ring"></div>
+                    </div>
+                    <div class="step-info">
+                        <h3>Tổng hợp âm thanh</h3>
+                        <p class="status-text">Đang chờ...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Result Section -->
+        <section class="result-section hidden" id="result-container">
+            <div class="result-layout">
+                <!-- Left Column: Audio & Summary -->
+                <div class="result-left card glass-effect">
+                    <div class="success-header">
+                        <div class="success-icon-wrapper">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <h2>Podcast Đã Sẵn Sàng!</h2>
+                    </div>
+                    
+                    <div class="audio-player-container">
+                        <audio id="audio-player" controls preload="metadata">
+                            Trình duyệt của bạn không hỗ trợ thẻ audio.
+                        </audio>
+                    </div>
+
+                    <div class="summary-container">
+                        <h3><i class="fa-solid fa-file-lines"></i> Tóm tắt nội dung</h3>
+                        <div class="summary-content" id="summary-content">
+                            <!-- Summary text goes here -->
+                            <p>Đang tải tóm tắt...</p>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <a href="#" id="download-btn" class="btn btn-secondary" download>
+                            <i class="fa-solid fa-download"></i> Tải MP3
+                        </a>
+                        <button id="reset-btn" class="btn btn-outline">
+                            <i class="fa-solid fa-rotate-left"></i> Tạo Mới
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: AI Q&A Chat -->
+                <div class="result-right card glass-effect ai-chat-container">
+                    <div class="chat-header">
+                        <i class="fa-solid fa-robot"></i>
+                        <h3>Trợ lý AI - Hỏi đáp</h3>
+                    </div>
+                    
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message ai-message">
+                            <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
+                            <div class="message-bubble">
+                                Chào bạn! Tôi là trợ lý AI. Bạn có câu hỏi nào về nội dung của podcast này không?
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="Hỏi AI về podcast này..." autocomplete="off">
+                        <button id="send-chat-btn" class="btn-icon">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Error Toast -->
+    <div class="toast-notification hidden" id="error-toast">
+        <div class="toast-icon">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="toast-content">
+            <h4>Lỗi kết nối</h4>
+            <p id="error-msg">Không thể lấy dữ liệu từ URL.</p>
+        </div>
+        <button class="close-toast" id="close-toast-btn">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <!-- Script -->
+    <script src="app.js"></script>
+</body>
+</html>
