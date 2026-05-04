@@ -29,19 +29,47 @@ async def generate_audio_file(text: str, language: str, voice: str = None) -> tu
             else:
                 edge_voice = "vi-VN-HoaiMyNeural" if language == "vi" else "en-US-AriaNeural"
                 
-            communicate = edge_tts.Communicate(text, edge_voice)
-            print(f"DEBUG: Starting edge-tts save (Background Task - 60s timeout)...")
+            import re
+            def split_text(text, max_length=1500):
+                sentences = re.split(r'(?<=[.!?\n])\s+', text)
+                chunks = []
+                current_chunk = ""
+                for sentence in sentences:
+                    if len(current_chunk) + len(sentence) <= max_length:
+                        current_chunk += " " + sentence
+                    else:
+                        if current_chunk:
+                            chunks.append(current_chunk.strip())
+                        current_chunk = sentence
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                return chunks
+
+            chunks = split_text(text, max_length=1500)
+            print(f"DEBUG: Starting edge-tts save. Text split into {len(chunks)} chunks...")
+            
             import asyncio
             try:
-                # Đợi tối đa 60 giây vì đây là chạy ngầm
-                await asyncio.wait_for(communicate.save(filepath), timeout=60.0)
-                print(f"DEBUG: edge-tts save complete. Saved to {filepath}")
-            except Exception as e:
-                print(f"DEBUG: edge-tts SKIPPED (Timeout or Error): {str(e)}")
-                # Tạo file trắng ngay lập tức để không bị treo fetch
+                # Mở file để ghi byte tuần tự
                 with open(filepath, 'wb') as f:
-                    f.write(b'\xff\xfb\x90\x44\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-                return filename, filepath
+                    for i, chunk_text in enumerate(chunks):
+                        if not chunk_text.strip():
+                            continue
+                        print(f"DEBUG: Processing chunk {i+1}/{len(chunks)}...")
+                        communicate = edge_tts.Communicate(chunk_text, edge_voice)
+                        # Dùng timeout cho từng chunk phòng khi mất kết nối mạng
+                        async def process_chunk():
+                            async for chunk in communicate.stream():
+                                if chunk["type"] == "audio":
+                                    f.write(chunk["data"])
+                        await asyncio.wait_for(process_chunk(), timeout=120.0)
+                print(f"DEBUG: edge-tts save complete. Saved to {filepath}")
+            except asyncio.TimeoutError:
+                print("DEBUG: edge-tts SKIPPED (Timeout during chunking)")
+                raise Exception("Tạo Audio thất bại: Quá thời gian xử lý (Timeout) khi tải một đoạn kịch bản.")
+            except Exception as e:
+                print(f"DEBUG: edge-tts SKIPPED (Error): {str(e)}")
+                raise Exception(f"Lỗi tạo Audio từ Edge-TTS: {str(e)}")
             return filename, filepath
         except Exception as e:
             print(f"DEBUG: CRITICAL ERROR in service.py: {str(e)}")
