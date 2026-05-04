@@ -55,14 +55,29 @@ async def generate_audio_file(text: str, language: str, voice: str = None) -> tu
                     for i, chunk_text in enumerate(chunks):
                         if not chunk_text.strip():
                             continue
-                        print(f"DEBUG: Processing chunk {i+1}/{len(chunks)}...")
-                        communicate = edge_tts.Communicate(chunk_text, edge_voice)
-                        # Dùng timeout cho từng chunk phòng khi mất kết nối mạng
-                        async def process_chunk():
-                            async for chunk in communicate.stream():
-                                if chunk["type"] == "audio":
-                                    f.write(chunk["data"])
-                        await asyncio.wait_for(process_chunk(), timeout=120.0)
+                        
+                        max_retries = 3
+                        for attempt in range(max_retries):
+                            print(f"DEBUG: Processing chunk {i+1}/{len(chunks)} (Attempt {attempt+1})...")
+                            try:
+                                communicate = edge_tts.Communicate(chunk_text, edge_voice)
+                                async def process_chunk():
+                                    async for chunk in communicate.stream():
+                                        if chunk["type"] == "audio":
+                                            f.write(chunk["data"])
+                                await asyncio.wait_for(process_chunk(), timeout=120.0)
+                                break # Thành công thì thoát loop retry
+                            except Exception as chunk_err:
+                                print(f"DEBUG: Chunk {i+1} failed: {str(chunk_err)}")
+                                if attempt == max_retries - 1:
+                                    raise chunk_err
+                                print(f"DEBUG: Retrying chunk {i+1} sau 3 giây...")
+                                await asyncio.sleep(3)
+                        
+                        # Tránh rate limit của server bằng cách delay nhẹ
+                        if i < len(chunks) - 1:
+                            await asyncio.sleep(1.5)
+                            
                 print(f"DEBUG: edge-tts save complete. Saved to {filepath}")
             except asyncio.TimeoutError:
                 print("DEBUG: edge-tts SKIPPED (Timeout during chunking)")

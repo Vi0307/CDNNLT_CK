@@ -55,6 +55,16 @@ services:
       - ./services/tts-service/app:/app/app
       - ./services/tts-service/audio_output:/app/audio_output
 
+  api-gateway:
+    build: ./services/api-gateway
+    ports:
+      - "8005:8005"
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./services/api-gateway/app:/app/app
+
 networks:
   default:
     name: blog2cast-network
