@@ -44,6 +44,8 @@ class ConvertResponse(BaseModel):
     status: str
     audio_url: str
     message: str
+    summary: str
+    source: str
 
 
 # ---------- Health ----------
@@ -108,8 +110,12 @@ async def convert(request: ConvertRequest):
 
         process_data = process_res.json()
         script = process_data.get("script", "")
+        summary = process_data.get("summary", "")
+        source = process_data.get("source", "unknown")
         if not script:
             raise HTTPException(status_code=422, detail="AI xử lý thất bại, không có kịch bản.")
+        if source == "mock" and os.getenv("USE_MOCK", "false").lower() != "true":
+            raise HTTPException(status_code=502, detail="Process service đang trả mock dù USE_MOCK=false.")
 
         # ── STEP 3: TTS ────────────────────────────────────────────────
         tts_text = _prepare_tts_text(script)
@@ -138,6 +144,8 @@ async def convert(request: ConvertRequest):
             status="success",
             audio_url=audio_url,
             message="Tạo podcast thành công",
+            summary=summary,
+            source=source,
         )
 
 

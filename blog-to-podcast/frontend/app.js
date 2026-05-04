@@ -203,9 +203,14 @@ document.addEventListener('DOMContentLoaded', () => {
             progressContainer.classList.add('hidden');
             resultContainer.classList.remove('hidden');
 
-            // audio_url dạng /download/<filename> — proxy qua gateway
-            const fullAudioUrl = `${GATEWAY_URL}${audioPath}`;
+            // audio_url dạng /download/<filename> — proxy qua gateway.
+            // Thêm cache-buster và ép audio.load() để tránh browser phát lại file cũ.
+            const fullAudioUrl = `${GATEWAY_URL}${audioPath}?t=${Date.now()}`;
+            audioPlayer.pause();
+            audioPlayer.removeAttribute('src');
+            audioPlayer.load();
             audioPlayer.src = fullAudioUrl;
+            audioPlayer.load();
             downloadBtn.href = fullAudioUrl;
             
             // Update Summary

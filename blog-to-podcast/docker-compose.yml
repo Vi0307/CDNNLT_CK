@@ -29,7 +29,7 @@ services:
     volumes:
       - ./services/content-service/app:/app/app
 
-  # ── Process Service (AI script) ────────────────────────────────────────
+  # ── Process Service (AI script via Claude AI Service) ──────────────────
   process-service:
     build: ./services/process-service
     ports:
@@ -39,8 +39,9 @@ services:
       - PYTHONUNBUFFERED=1
       - USE_MOCK=${USE_MOCK:-false}
       - AI_SERVICE_URL=http://ai-service:8004
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - AI_TIMEOUT=${AI_TIMEOUT:-180}
+    depends_on:
+      - ai-service
     volumes:
       - ./services/process-service/app:/app/app
 
@@ -55,8 +56,8 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL:-https://1gw.gwai.cloud}
       - ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-claude-sonnet-4-6}
-      - AI_TIMEOUT=${AI_TIMEOUT:-60}
-      - AI_PROVIDER=${AI_PROVIDER:-claude}
+      - AI_TIMEOUT=${AI_TIMEOUT:-180}
+      - AI_PROVIDER=claude
     volumes:
       - ./services/ai-service/app:/app/app
 

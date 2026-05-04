@@ -96,6 +96,10 @@ def _meta_og(soup: BeautifulSoup) -> Tuple[str, str]:
     )
 
 
+def _clean_text(value: str) -> str:
+    return re.sub(r"\s+", " ", value).strip()
+
+
 def _legacy_paragraphs(html: str) -> Tuple[str, str]:
     soup = BeautifulSoup(html, "html.parser")
     tags_to_remove = [
@@ -105,16 +109,16 @@ def _legacy_paragraphs(html: str) -> Tuple[str, str]:
     for tag in tags_to_remove:
         for element in soup.find_all(tag):
             element.decompose()
-    for sel in [".ads", ".sidebar", ".menu", ".related"]:
+    for sel in [".ads", ".sidebar", ".menu", ".related", ".box-category", ".list-news"]:
         for element in soup.select(sel):
             element.decompose()
 
     title = ""
     h1 = soup.find("h1")
     if h1:
-        title = h1.get_text().strip()
+        title = _clean_text(h1.get_text())
     elif soup.title and soup.title.string:
-        title = soup.title.string.strip()
+        title = _clean_text(soup.title.string)
 
     def _div_content_class(cls) -> bool:
         if not cls:
@@ -129,19 +133,59 @@ def _legacy_paragraphs(html: str) -> Tuple[str, str]:
 
     parts = []
     for tag in main_content.find_all(["p", "h2", "h3"]):
-        txt = tag.get_text().strip()
+        txt = _clean_text(tag.get_text(" "))
         if len(txt) > 25:
             parts.append(txt)
     text = "\n\n".join(parts)
     if not text:
         text = "\n\n".join(
-            p.get_text().strip() for p in soup.find_all("p") if len(p.get_text().strip()) > 15
+            _clean_text(p.get_text(" ")) for p in soup.find_all("p") if len(_clean_text(p.get_text(" "))) > 15
         )
     return title, text
 
 
+def _extract_vnexpress(html: str, soup: BeautifulSoup) -> Tuple[str, str]:
+    """Bóc tách riêng VnExpress để tránh lấy nhầm bài liên quan trong HTML."""
+    title_tag = soup.select_one("h1.title-detail") or soup.select_one("h1")
+    title = _clean_text(title_tag.get_text(" ")) if title_tag else ""
+
+    description_tag = soup.select_one("p.description")
+    parts = []
+    if description_tag:
+        description = _clean_text(description_tag.get_text(" "))
+        if len(description) > 25:
+            parts.append(description)
+
+    article = soup.select_one("article.fck_detail") or soup.select_one("article")
+    if article:
+        for unwanted in article.select(
+            ".Normal[style*='display:none'], .box_embed_video_parent, .box_quangcao, "
+            ".related_news, .list-news, .box-category, table.tplCaption"
+        ):
+            unwanted.decompose()
+        for paragraph in article.select("p.Normal, p"):
+            text = _clean_text(paragraph.get_text(" "))
+            if len(text) > 25 and text not in parts:
+                parts.append(text)
+
+    return title, "\n\n".join(parts)
+
+
 def _pick_best_body(url: str, html: str, soup: BeautifulSoup) -> str:
-    """Ưu tiên trafilatura, rồi JSON-LD, đoạn legacy, cuối cùng og:description."""
+    """Ưu tiên extractor theo domain, rồi JSON-LD/legacy, cuối cùng mới trafilatura."""
+    if "vnexpress.net" in url.lower():
+        _, vnexpress_body = _extract_vnexpress(html, soup)
+        if vnexpress_body and len(vnexpress_body.strip()) >= 80:
+            return vnexpress_body.strip()
+
+    _, body_ld = _extract_json_ld(html)
+    if body_ld and len(body_ld.strip()) >= 80:
+        return body_ld.strip()
+
+    _, legacy_text = _legacy_paragraphs(html)
+    if legacy_text and len(legacy_text.strip()) >= 80:
+        return legacy_text.strip()
+
     try:
         traf = trafilatura.extract(
             html,
@@ -155,36 +199,33 @@ def _pick_best_body(url: str, html: str, soup: BeautifulSoup) -> str:
     if traf and len(traf.strip()) >= 80:
         return traf.strip()
 
-    _, body_ld = _extract_json_ld(html)
-    if body_ld and len(body_ld.strip()) >= 60:
-        return body_ld.strip()
-
-    _, legacy_text = _legacy_paragraphs(html)
-    if legacy_text and len(legacy_text.strip()) >= 40:
-        return legacy_text.strip()
-
     _, og_desc = _meta_og(soup)
     if og_desc and len(og_desc.strip()) >= 30:
         return og_desc.strip()
 
-    if traf:
-        return traf.strip()
     if body_ld:
         return body_ld.strip()
-    return legacy_text.strip() if legacy_text else ""
+    if legacy_text:
+        return legacy_text.strip()
+    return traf.strip() if traf else ""
 
 
-def _pick_title(html: str, soup: BeautifulSoup, body_fallback: str) -> str:
+def _pick_title(url: str, html: str, soup: BeautifulSoup, body_fallback: str) -> str:
+    if "vnexpress.net" in url.lower():
+        vnexpress_title, _ = _extract_vnexpress(html, soup)
+        if vnexpress_title and len(vnexpress_title) > 2:
+            return vnexpress_title[:500]
+
     title_ld, _ = _extract_json_ld(html)
     og_title, _ = _meta_og(soup)
     h1 = soup.find("h1")
-    h1t = h1.get_text().strip() if h1 else ""
+    h1t = _clean_text(h1.get_text(" ")) if h1 else ""
 
     for cand in (h1t, title_ld, og_title):
         if cand and len(cand) > 2 and cand.lower() not in ("msn", "home", "news"):
             return cand[:500]
     if soup.title and soup.title.string:
-        t = soup.title.string.strip()
+        t = _clean_text(soup.title.string)
         if t and t.lower() not in ("msn",):
             return t[:500]
     first_line = body_fallback.split("\n", 1)[0].strip() if body_fallback else ""
@@ -211,7 +252,7 @@ def crawl_url(url: str) -> CrawlResponse:
         soup = BeautifulSoup(html, "html.parser")
 
         text = _pick_best_body(url, html, soup)
-        title = _pick_title(html, soup, text)
+        title = _pick_title(url, html, soup, text)
 
         return CrawlResponse(
             url=url,
