@@ -19,6 +19,8 @@ services:
       - PYTHONUNBUFFERED=1
       - USE_MOCK=${USE_MOCK:-false}
       - AI_SERVICE_URL=http://ai-service:8004
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
     volumes:
       - ./services/process-service/app:/app/app
 

@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/convert.css">
 </head>
 <body>
     <div class="app-container">
@@ -60,11 +60,11 @@
 
     <script>
         const CONFIG = {
-            MAC_IP: '192.168.0.100',
+            HOST: 'localhost',
             ENDPOINTS: {
-                CONTENT: 'http://192.168.0.100:8001/crawl',
-                PROCESS: 'http://192.168.0.100:8000/process',
-                TTS: 'http://192.168.0.100:8012/tts'
+                CONTENT: 'http://localhost:8001/crawl',
+                PROCESS: 'http://localhost:8000/process',
+                TTS: 'http://localhost:8003/tts'
             }
         };
 
@@ -83,56 +83,66 @@
             tts: document.getElementById('step-tts')
         };
 
+        // Reset step indicators
+        const resetSteps = () => {
+            Object.values(steps).forEach(step => {
+                step.classList.remove('active');
+                step.classList.remove('completed');
+            });
+        };
+
         generateBtn.addEventListener('click', async () => {
             const url = articleUrlInput.value.trim();
-            if (!url) return alert('Vui lòng nhập URL');
+            if (!url) return alert('Vui lòng nhập URL bài báo');
 
             document.getElementById('btnSpinner').style.display = 'inline-block';
-            statusArea.style.display = 'block';
+            statusArea.style.display = 'flex';
             resultArea.style.display = 'none';
+            resetSteps();
 
             try {
-                // Step 1
+                // Step 1: Lấy nội dung
                 steps.crawl.classList.add('active');
                 const cRes = await fetch(CONFIG.ENDPOINTS.CONTENT, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({url})
                 });
+                if (!cRes.ok) throw new Error('Không thể lấy nội dung bài báo');
                 const cData = await cRes.json();
-                steps.crawl.classList.add('completed');
+                steps.crawl.classList.replace('active', 'completed');
 
-                // Step 2
+                // Step 2: Xử lý & Tóm tắt AI
                 steps.ai.classList.add('active');
                 const aRes = await fetch(CONFIG.ENDPOINTS.PROCESS, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({text: cData.text, language: langSelect.value})
                 });
+                if (!aRes.ok) throw new Error('AI không thể xử lý nội dung');
                 const aData = await aRes.json();
-                steps.ai.classList.add('completed');
+                steps.ai.classList.replace('active', 'completed');
 
-                // Step 3 (Async)
+                // Step 3: Tạo Audio (TTS)
                 steps.tts.classList.add('active');
-                const tStart = await fetch(CONFIG.ENDPOINTS.TTS, {
+                const tRes = await fetch(CONFIG.ENDPOINTS.TTS, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({text: aData.script, language: langSelect.value, voice: voiceSelect.value})
                 });
-                const tStartData = await tStart.json();
+                if (!tRes.ok) throw new Error('Lỗi trong quá trình tạo Audio');
+                const tData = await tRes.json();
                 
-                let done = false;
-                while(!done) {
-                    const tStatus = await fetch(`http://${CONFIG.MAC_IP}:8012/status/${tStartData.task_id}`);
-                    const sData = await tStatus.json();
-                    if(sData.status === 'success') {
-                        audioPlayer.src = `http://${CONFIG.MAC_IP}:8012${sData.audio_url}`;
-                        summaryText.innerText = aData.summary;
-                        resultArea.style.display = 'block';
-                        steps.tts.classList.add('completed');
-                        done = true;
-                    } else if(sData.status === 'error') throw new Error('TTS Failed');
-                    else await new Promise(r => setTimeout(r, 2000));
+                if(tData.status === 'success') {
+                    // Update UI with results
+                    audioPlayer.src = `http://localhost:8005${tData.audio_url}`;
+                    summaryText.innerText = aData.summary;
+                    resultArea.style.display = 'flex';
+                    steps.tts.classList.replace('active', 'completed');
+                } else {
+                    throw new Error(tData.message || 'TTS Failed');
                 }
             } catch (e) {
                 alert('Lỗi: ' + e.message);
+                resetSteps();
+                statusArea.style.display = 'none';
             } finally {
                 document.getElementById('btnSpinner').style.display = 'none';
             }
