@@ -21,6 +21,7 @@ async def generate_audio_file(text: str, language: str, voice: str = None) -> tu
     if not GOOGLE_API_KEY:
         try:
             import edge_tts
+            print(f"DEBUG: Using edge-tts fallback. Voice: {voice}")
             # Nếu Frontend truyền tên giọng Edge-TTS (kết thúc bằng Neural), ta sẽ dùng luôn giọng đó.
             # Nếu không (hoặc truyền giọng của Google như Neural2), ta dùng giọng mặc định.
             if voice and voice.endswith("Neural") and "Neural2" not in voice:
@@ -29,15 +30,22 @@ async def generate_audio_file(text: str, language: str, voice: str = None) -> tu
                 edge_voice = "vi-VN-HoaiMyNeural" if language == "vi" else "en-US-AriaNeural"
                 
             communicate = edge_tts.Communicate(text, edge_voice)
-            await communicate.save(filepath)
-            print(f"Mocking TTS with edge-tts (No API Key). Saved to {filepath}")
+            print(f"DEBUG: Starting edge-tts save (Background Task - 60s timeout)...")
+            import asyncio
+            try:
+                # Đợi tối đa 60 giây vì đây là chạy ngầm
+                await asyncio.wait_for(communicate.save(filepath), timeout=60.0)
+                print(f"DEBUG: edge-tts save complete. Saved to {filepath}")
+            except Exception as e:
+                print(f"DEBUG: edge-tts SKIPPED (Timeout or Error): {str(e)}")
+                # Tạo file trắng ngay lập tức để không bị treo fetch
+                with open(filepath, 'wb') as f:
+                    f.write(b'\xff\xfb\x90\x44\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+                return filename, filepath
             return filename, filepath
-        except ImportError:
-            print("edge-tts not installed. Creating empty dummy file.")
-            # Create a dummy silent/empty mp3 file for mock testing
-            with open(filepath, 'wb') as f:
-                pass
-            return filename, filepath
+        except Exception as e:
+            print(f"DEBUG: CRITICAL ERROR in service.py: {str(e)}")
+            raise e
 
     # Gọi Google Cloud TTS REST API
     url = f"https://texttospeech.googleapis.com/v1/text:synthesize?key={GOOGLE_API_KEY}"

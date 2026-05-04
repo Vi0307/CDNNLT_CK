@@ -1,305 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog2Cast - Convert</title>
-    <!-- Google Fonts -->
+    <title>Blog2Cast | Premium AI Podcast</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="../css/convert.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
 </head>
-
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="logo-area">
-                <div class="logo-icon">
-                    <i class="fas fa-headphones"></i>
+        <div class="glass-card">
+            <header>
+                <h1>Blog2Cast</h1>
+                <p class="subtitle">Premium AI Podcast Generator</p>
+            </header>
+            <main>
+                <div class="input-group">
+                    <input type="text" id="articleUrl" placeholder="Dán link bài báo vào đây..." autocomplete="off">
                 </div>
-                <h2>Blog2Cast</h2>
-            </div>
-
-            <nav class="main-nav">
-                <a href="convert.html" class="nav-item active">
-                    <span class="nav-text">Convert</span>
-                </a>
-                <a href="library.html" class="nav-item">
-                    <i class="fas fa-chart-bar" style="width: 20px;"></i>
-                    <span>Library</span>
-                </a>
-            </nav>
-
-            <div class="bottom-nav">
-                <a href="#" class="nav-item">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <div class="content-wrapper">
-                <!-- Header -->
-                <header class="page-header">
-                    <div class="badge">
-                        <span class="dot"></span> Intelligent Audio Conversion
+                <div class="config-row">
+                    <select id="voiceProfile">
+                        <option value="vi-VN-HoaiMyNeural">Hoài My (Nữ)</option>
+                        <option value="vi-VN-NamMinhNeural">Nam Minh (Nam)</option>
+                    </select>
+                    <select id="outputLanguage">
+                        <option value="vi">Tiếng Việt</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <button id="generateBtn" type="button" class="btn-primary">
+                    <span class="btn-text">Bắt đầu chuyển đổi</span>
+                    <div class="spinner" id="btnSpinner"></div>
+                </button>
+                <div id="statusArea" class="status-area">
+                    <div class="step-item" id="step-crawl">
+                        <div class="step-icon">1</div>
+                        <div class="step-text"><h4>Đang đọc nội dung</h4></div>
                     </div>
-                    <h1 class="main-title">Turn any article into a</h1>
-                    <div class="gradient-rectangle"></div>
-                    <p class="subtitle">Paste a link, choose a voice, and let our AI generate a professional
-                        audio<br>summary you can listen to anywhere.</p>
-                </header>
-
-                <!-- Form Card -->
-                <div class="card form-card">
-                    <div id="convertForm" class="form-container">
-                        <div class="form-group full-width">
-                            <label>Article URL</label>
-                            <div class="input-wrapper">
-                                <i class="fas fa-link input-icon"></i>
-                                <input type="url" id="articleUrl" placeholder="https://example.com/blog-post" required>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Voice Profile</label>
-                                <div class="input-wrapper select-wrapper">
-                                    <i class="fas fa-microphone input-icon"></i>
-                                    <select class="custom-select" id="voiceProfile" required>
-                                        <option value="" disabled selected>Select Voice</option>
-                                        <optgroup label="Tiếng Việt">
-                                            <option value="vi-VN-HoaiMyNeural">HoaiMy (Nữ)</option>
-                                            <option value="vi-VN-NamMinhNeural">NamMinh (Nam)</option>
-                                        </optgroup>
-                                        <optgroup label="English">
-                                            <option value="en-US-AriaNeural">Aria (Female)</option>
-                                            <option value="en-US-GuyNeural">Guy (Male)</option>
-                                            <option value="en-GB-SoniaNeural">Sonia (British)</option>
-                                        </optgroup>
-                                        <optgroup label="Español">
-                                            <option value="es-ES-ElviraNeural">Elvira (Femenino)</option>
-                                        </optgroup>
-                                        <optgroup label="Français">
-                                            <option value="fr-FR-DeniseNeural">Denise (Féminin)</option>
-                                        </optgroup>
-                                        <optgroup label="Deutsch">
-                                            <option value="de-DE-KatjaNeural">Katja (Weiblich)</option>
-                                        </optgroup>
-                                    </select>
-                                    <i class="fas fa-chevron-down select-arrow"></i>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Output Language</label>
-                                <div class="input-wrapper select-wrapper">
-                                    <i class="fas fa-language input-icon"></i>
-                                    <select class="custom-select" id="outputLanguage" required>
-                                        <option value="" disabled selected>Select Language</option>
-                                        <option value="en">English</option>
-                                        <option value="vi">Vietnamese</option>
-                                        <option value="es">Spanish</option>
-                                        <option value="fr">French</option>
-                                        <option value="de">German</option>
-                                    </select>
-                                    <i class="fas fa-chevron-down select-arrow"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Initial Action Button -->
-                        <div id="actionArea">
-                            <button type="button" id="convertBtn" class="primary-btn btn-full">Convert to Podcast <i
-                                    class="fas fa-arrow-right"></i></button>
-                        </div>
-
-                        <!-- Progress Area (Hidden Initially) -->
-                        <div id="progressArea" class="hidden" style="margin-top: 32px;">
-                            <h4 class="section-heading">Conversion Progress</h4>
-                            <div class="stepper">
-                                <div class="step" id="step-0">
-                                    <div class="step-icon"><i class="fas fa-circle"></i></div>
-                                    <div class="step-content">
-                                        <h5>Crawling Article</h5>
-                                        <p>Extracting text content</p>
-                                    </div>
-                                </div>
-                                <div class="step-line" id="line-0"></div>
-                                <div class="step" id="step-1">
-                                    <div class="step-icon"><i class="fas fa-circle"></i></div>
-                                    <div class="step-content">
-                                        <h5>AI Processing</h5>
-                                        <p>Summarizing & generating script</p>
-                                    </div>
-                                </div>
-                                <div class="step-line" id="line-1"></div>
-                                <div class="step" id="step-2">
-                                    <div class="step-icon"><i class="fas fa-circle"></i></div>
-                                    <div class="step-content">
-                                        <h5>Audio Generation</h5>
-                                        <p>Converting text to speech</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="result-banner hidden-banner" id="resultBanner">
-                                <div class="result-info">
-                                    <div class="icon-circle-blue">
-                                        <i class="fas fa-microphone"></i>
-                                    </div>
-                                    <div class="result-text">
-                                        <h5>Podcast Ready!</h5>
-                                        <p>Duration: ~5:30</p>
-                                    </div>
-                                </div>
-                                <button type="button" class="play-btn"><i class="fas fa-play-circle"></i> Play
-                                    Now</button>
-                            </div>
-                        </div>
+                    <div class="step-item" id="step-ai">
+                        <div class="step-icon">2</div>
+                        <div class="step-text"><h4>AI đang xử lý</h4></div>
+                    </div>
+                    <div class="step-item" id="step-tts">
+                        <div class="step-icon">3</div>
+                        <div class="step-text"><h4>Đang tạo giọng nói</h4></div>
                     </div>
                 </div>
-
-                <!-- AI Assistant Area (Hidden Initially) -->
-                <div id="aiAssistantArea" class="ai-assistant-section hidden">
-                    <div class="section-header">
-                        <div class="icon-circle-orange">
-                            <i class="fas fa-robot"></i>
-                        </div>
-                        <h3>AI Assistant</h3>
+                <div id="resultArea" class="result-area">
+                    <div class="podcast-player">
+                        <audio id="audioPlayer" controls></audio>
                     </div>
-
-                    <div class="card assistant-card">
-                        <!-- Tabs -->
-                        <div class="tabs">
-                            <button class="tab active" data-tab="ask">
-                                <i class="far fa-comment-alt"></i> Ask
-                            </button>
-                            <button class="tab" data-tab="explain">
-                                <i class="fas fa-book-open"></i> Explain
-                            </button>
-                        </div>
-
-                        <!-- Tab Content: Ask -->
-                        <div class="tab-content active" id="tab-ask">
-                            <div class="chat-area">
-                                <div class="chat-message bot">
-                                    <div class="avatar"><i class="fas fa-robot"></i></div>
-                                    <div class="message-bubble">Hi! I've processed this article. What would you like to
-                                        know?</div>
-                                </div>
-                            </div>
-                            <div class="chat-input-area">
-                                <input type="text" placeholder="Ask a question about the article...">
-                                <button type="button" class="send-btn"><i class="far fa-paper-plane"></i></button>
-                            </div>
-                        </div>
-
-                        <!-- Tab Content: Explain -->
-                        <div class="tab-content" id="tab-explain">
-                            <div class="explain-hint">
-                                <i class="fas fa-magic"></i> Highlight any text below to get an instant explanation
-                            </div>
-                            <div class="article-text">
-                                <p>This article explores how intelligent systems can automatically convert written
-                                    content into audio podcasts using a microservices architecture. The process involves
-                                    three main stages: web crawling, AI processing, and audio generation.</p>
-                                <p>The web crawling service uses HTTP requests and BeautifulSoup4 to extract clean text
-                                    from any blog post or article URL. This raw text is then passed through a message
-                                    queue to the AI processing service.</p>
-                                <p>The AI service leverages large language models like Claude or GPT to perform several
-                                    tasks: summarizing the article into a concise script, generating a natural
-                                    conversational flow suitable for audio, and identifying key concepts and
-                                    terminology. This step transforms raw article text into a polished podcast script.
-                                </p>
-                                <p>The audio generation service uses Google Text-to-Speech (gTTS) technology to convert
-                                    the script into natural-sounding speech. Users can select different voice profiles
-                                    and output languages. The resulting MP3 file is stored and made available for
-                                    streaming or download.</p>
-                                <p>The entire pipeline is orchestrated through RabbitMQ message queues, ensuring each
-                                    service operates independently as a Docker container. A notification service tracks
-                                    the status of each request and provides real-time updates to the client through
-                                    polling.</p>
-                                <p>Key technologies mentioned include Python FastAPI for the API gateway, PostgreSQL for
-                                    production databases, and Redis Queue as a simpler alternative to RabbitMQ. The
-                                    system...</p>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="summary-card" id="summaryText"></div>
                 </div>
-
-            </div>
-        </main>
-    </div>
-
-    <!-- Explain Popup -->
-    <div id="explainPopup" class="explain-popup hidden">
-        <div class="popup-header">
-            <div class="popup-title">
-                <i class="fas fa-book-open"></i>
-                <span id="popupSelectedText">"Google Text-to-Speech (gTTS)"</span>
-            </div>
-            <button class="popup-close-btn" id="closePopupBtn"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="popup-body">
-            <button id="explainTermBtn" class="primary-btn btn-full popup-explain-btn">
-                <i class="fas fa-magic"></i> Explain this term
-            </button>
-            <div id="explanationText" class="explanation-content hidden">
-                <!-- Explanation will appear here -->
-            </div>
+            </main>
         </div>
     </div>
 
-    <!-- Global Audio Player (Hidden by default) -->
-    <div id="globalAudioPlayer" class="audio-player-bar hidden">
-        <div class="player-content">
-            <div class="player-info">
-                <div class="player-icon"><i class="fas fa-podcast"></i></div>
-                <div class="player-text">
-                    <h4 id="playerTitle">Understanding Microservices Architecture</h4>
-                    <p>Generated Podcast • 5:30</p>
-                </div>
-            </div>
+    <script>
+        const CONFIG = {
+            MAC_IP: '192.168.0.100',
+            ENDPOINTS: {
+                CONTENT: 'http://192.168.0.100:8001/crawl',
+                PROCESS: 'http://192.168.0.100:8000/process',
+                TTS: 'http://192.168.0.100:8012/tts'
+            }
+        };
 
-            <div class="player-controls">
-                <button class="control-btn"><i class="fas fa-backward-step"></i></button>
-                <button class="control-btn play-pause-btn" id="playerPlayBtn"><i class="fas fa-pause"></i></button>
-                <button class="control-btn"><i class="fas fa-forward-step"></i></button>
-            </div>
+        const generateBtn = document.getElementById('generateBtn');
+        const articleUrlInput = document.getElementById('articleUrl');
+        const voiceSelect = document.getElementById('voiceProfile');
+        const langSelect = document.getElementById('outputLanguage');
+        const statusArea = document.getElementById('statusArea');
+        const resultArea = document.getElementById('resultArea');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const summaryText = document.getElementById('summaryText');
 
-            <div class="player-progress">
-                <span class="time-current" data-seconds="0">0:00</span>
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: 0%;"></div>
-                    <div class="progress-bar-thumb" style="left: 0%;"></div>
-                </div>
-                <span class="time-total">5:30</span>
-            </div>
+        const steps = {
+            crawl: document.getElementById('step-crawl'),
+            ai: document.getElementById('step-ai'),
+            tts: document.getElementById('step-tts')
+        };
 
-            <div class="player-volume">
-                <i class="fas fa-volume-up"></i>
-                <div class="volume-bar">
-                    <div class="volume-fill" style="width: 80%;"></div>
-                </div>
-                <button class="close-player-btn" id="closePlayerBtn"><i class="fas fa-times"></i></button>
-            </div>
-        </div>
-    </div>
+        generateBtn.addEventListener('click', async () => {
+            const url = articleUrlInput.value.trim();
+            if (!url) return alert('Vui lòng nhập URL');
 
-    <!-- Custom JS -->
-    <script src="../js/convert.js"></script>
+            document.getElementById('btnSpinner').style.display = 'inline-block';
+            statusArea.style.display = 'block';
+            resultArea.style.display = 'none';
+
+            try {
+                // Step 1
+                steps.crawl.classList.add('active');
+                const cRes = await fetch(CONFIG.ENDPOINTS.CONTENT, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({url})
+                });
+                const cData = await cRes.json();
+                steps.crawl.classList.add('completed');
+
+                // Step 2
+                steps.ai.classList.add('active');
+                const aRes = await fetch(CONFIG.ENDPOINTS.PROCESS, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text: cData.text, language: langSelect.value})
+                });
+                const aData = await aRes.json();
+                steps.ai.classList.add('completed');
+
+                // Step 3 (Async)
+                steps.tts.classList.add('active');
+                const tStart = await fetch(CONFIG.ENDPOINTS.TTS, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text: aData.script, language: langSelect.value, voice: voiceSelect.value})
+                });
+                const tStartData = await tStart.json();
+                
+                let done = false;
+                while(!done) {
+                    const tStatus = await fetch(`http://${CONFIG.MAC_IP}:8012/status/${tStartData.task_id}`);
+                    const sData = await tStatus.json();
+                    if(sData.status === 'success') {
+                        audioPlayer.src = `http://${CONFIG.MAC_IP}:8012${sData.audio_url}`;
+                        summaryText.innerText = aData.summary;
+                        resultArea.style.display = 'block';
+                        steps.tts.classList.add('completed');
+                        done = true;
+                    } else if(sData.status === 'error') throw new Error('TTS Failed');
+                    else await new Promise(r => setTimeout(r, 2000));
+                }
+            } catch (e) {
+                alert('Lỗi: ' + e.message);
+            } finally {
+                document.getElementById('btnSpinner').style.display = 'none';
+            }
+        });
+    </script>
 </body>
-
 </html>

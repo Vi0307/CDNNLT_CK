@@ -1,12 +1,15 @@
 FROM python:3.11-slim
 
+LABEL maintainer="ai-service"
+LABEL description="AI Gateway Microservice"
+
 WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app/ .
+COPY app ./app
 
-EXPOSE 8002
+EXPOSE 8004
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8004"]
