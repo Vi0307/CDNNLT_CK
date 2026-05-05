@@ -389,6 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update Summary
             currentOriginalSummary = originalSummaryText || '';
             currentTranslatedSummary = summaryText || '';
+            currentContext = currentOriginalSummary || currentTranslatedSummary;  // dùng làm context cho explain
             currentOriginalHTML = prepareHighlightableText(currentOriginalSummary);
             currentTranslatedHTML = prepareHighlightableText(currentTranslatedSummary);
 
@@ -420,6 +421,97 @@ document.addEventListener('DOMContentLoaded', () => {
             errorToast.classList.add('hidden');
         }, 5000);
     }
+
+    // ── Explain Term (highlight → tooltip → popup) ────────────────────
+    const selectionTooltip = document.getElementById('selection-tooltip');
+    const explainPopup     = document.getElementById('explain-popup');
+    const explainPopupWord = document.getElementById('explain-popup-word');
+    const explainLoading   = document.getElementById('explain-loading');
+    const explainContent   = document.getElementById('explain-content');
+    const explainMeaning   = document.getElementById('explain-meaning');
+    const explainExample   = document.getElementById('explain-example');
+    const explainError     = document.getElementById('explain-error');
+    const explainClose     = document.getElementById('explain-popup-close');
+
+    let currentContext = '';  // lưu summary text hiện tại để làm context
+
+    // Khi user bôi text trong summary → hiện tooltip "Giải thích"
+    document.addEventListener('mouseup', (e) => {
+        // Bỏ qua nếu click vào popup/tooltip
+        if (explainPopup.contains(e.target) || selectionTooltip.contains(e.target)) return;
+
+        const selection = window.getSelection();
+        const selectedText = selection ? selection.toString().trim() : '';
+
+        if (selectedText.length < 2 || selectedText.length > 200) {
+            selectionTooltip.style.display = 'none';
+            return;
+        }
+
+        // Chỉ hiện khi bôi trong vùng summary
+        const summaryEl = document.getElementById('dynamic-summary-content');
+        if (!summaryEl) return;
+        const range = selection.getRangeAt(0);
+        if (!summaryEl.contains(range.commonAncestorContainer)) {
+            selectionTooltip.style.display = 'none';
+            return;
+        }
+
+        // Hiện tooltip gần vị trí bôi
+        const rect = range.getBoundingClientRect();
+        selectionTooltip.style.display = 'block';
+        selectionTooltip.style.left = `${rect.left + rect.width / 2 - selectionTooltip.offsetWidth / 2}px`;
+        selectionTooltip.style.top  = `${rect.top - 44 + window.scrollY}px`;
+        selectionTooltip.dataset.word = selectedText;
+    });
+
+    // Click tooltip → gọi API giải thích
+    selectionTooltip.addEventListener('click', async () => {
+        const word = selectionTooltip.dataset.word;
+        if (!word) return;
+
+        selectionTooltip.style.display = 'none';
+        window.getSelection()?.removeAllRanges();
+
+        // Hiện popup ở giữa màn hình
+        explainPopupWord.textContent = `"${word}"`;
+        explainLoading.style.display = 'block';
+        explainContent.style.display = 'none';
+        explainError.style.display   = 'none';
+        explainPopup.style.display   = 'block';
+        explainPopup.style.left = `${window.innerWidth / 2 - 160}px`;
+        explainPopup.style.top  = `${window.innerHeight / 2 - 100 + window.scrollY}px`;
+
+        try {
+            const res = await fetch(`${GATEWAY_URL}/explain`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ word, context: currentContext, language: langSelect.value }),
+            });
+            if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+            const data = await res.json();
+
+            explainMeaning.innerHTML = `<strong>Nghĩa:</strong> ${data.meaning || '—'}`;
+            explainExample.innerHTML = data.example ? `Ví dụ: ${data.example}` : '';
+            explainLoading.style.display = 'none';
+            explainContent.style.display = 'block';
+        } catch (err) {
+            explainLoading.style.display = 'none';
+            explainError.style.display   = 'block';
+            explainError.textContent     = `Không giải thích được: ${err.message}`;
+        }
+    });
+
+    // Đóng popup
+    explainClose.addEventListener('click', () => { explainPopup.style.display = 'none'; });
+    document.addEventListener('mousedown', (e) => {
+        if (!explainPopup.contains(e.target) && !selectionTooltip.contains(e.target)) {
+            explainPopup.style.display = 'none';
+        }
+        if (!selectionTooltip.contains(e.target)) {
+            selectionTooltip.style.display = 'none';
+        }
+    });
 
     // ── AI Chat Logic ──────────────────────────────────────────────────
     sendChatBtn.addEventListener('click', sendChatMessage);

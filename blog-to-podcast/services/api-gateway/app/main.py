@@ -113,8 +113,8 @@ async def convert(request: ConvertRequest):
         crawl_data = crawl_res.json()
         raw_text = crawl_data.get("text", "")
         article_title = crawl_data.get("title", "")
-        if not raw_text:
-            raise HTTPException(status_code=422, detail="Không thể trích xuất nội dung từ URL này.")
+        if not raw_text or len(raw_text.strip()) < 50:
+            raise HTTPException(status_code=422, detail="Không thể trích xuất nội dung từ URL này. Hãy thử URL bài báo cụ thể hơn.")
 
         # ── STEP 2: AI Process ─────────────────────────────────────────
         logger.info(f"[PROCESS] text length={len(raw_text)}, lang={request.language}")
@@ -173,7 +173,56 @@ async def convert(request: ConvertRequest):
         )
 
 
-# ---------- Audio proxy (forward /download/* về tts-service) ----------
+# ---------- Explain Term ----------
+
+class ExplainRequest(BaseModel):
+    word: str
+    context: str
+    language: str = "vi"
+
+
+@app.post("/explain")
+async def explain_term(request: ExplainRequest):
+    """Giải thích thuật ngữ hoặc cụm từ dựa trên ngữ cảnh bài viết."""
+    prompt = f"""Nhiệm vụ:
+Giải thích thuật ngữ hoặc cụm từ dựa trên nội dung bài viết.
+BẮT BUỘC:
+- Chỉ trả về JSON hợp lệ
+- Không text ngoài JSON
+FORMAT:
+{{"type": "common" | "term","original": "từ gốc","meaning": "giải thích theo ngữ cảnh","example": "ví dụ"}}
+QUY TẮC:
+- Nếu là từ thông thường: dịch nghĩa ngắn gọn
+- Nếu là thuật ngữ: giải thích dễ hiểu, liên quan tới nội dung bài
+- Ví dụ phải gần với nội dung bài viết
+INPUT:
+WORD: {request.word}
+CONTEXT: {request.context[:3000]}"""
+
+    timeout = httpx.Timeout(60.0, connect=10.0)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        try:
+            res = await client.post(
+                f"{PROCESS_SERVICE_URL.replace(':8002', ':8004').replace('process-service', 'ai-service')}/generate",
+                json={"prompt": prompt, "system_instruction": "Chỉ trả về JSON hợp lệ, không markdown, không giải thích thêm.", "provider": "claude"},
+            )
+            res.raise_for_status()
+            content = res.json().get("content", "")
+            # Parse JSON từ response
+            import json, re as _re
+            try:
+                data = json.loads(content)
+            except Exception:
+                m = _re.search(r'\{[\s\S]*\}', content)
+                if not m:
+                    raise HTTPException(status_code=502, detail="Không parse được JSON từ AI")
+                data = json.loads(m.group())
+            return data
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=503, detail=f"Không kết nối được AI service: {e}")
+
+
+
 
 @app.get("/download/{filename}")
 async def proxy_download(filename: str):
