@@ -2,7 +2,7 @@ import uuid
 from typing import Optional
 from pydantic import BaseModel, field_validator, model_validator
 
-SUPPORTED_LANGUAGES = {"vi", "en"}
+SUPPORTED_LANGUAGES = {"vi", "en", "fr", "ja"}
 
 class ProcessRequest(BaseModel):
     text: str
@@ -33,6 +33,7 @@ class ProcessRequest(BaseModel):
 class ProcessResponse(BaseModel):
     request_id: str
     summary: str
+    original_script: str = ""
     script: str
     status: str
     language: str
