@@ -24,9 +24,6 @@ body {
     background-color: var(--bg-dark);
     color: var(--text-main);
     min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     overflow-x: hidden;
     position: relative;
 }
@@ -97,10 +94,86 @@ body {
     100% { transform: translate(0, 0) scale(1); }
 }
 
+/* Layout & Sidebar */
+.app-layout {
+    display: flex;
+    width: 100vw;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 260px;
+    background: rgba(20, 20, 25, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border-color);
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+}
+
+.sidebar .logo {
+    justify-content: flex-start;
+    margin-bottom: 3rem;
+}
+
+.sidebar .logo-icon {
+    font-size: 2rem;
+}
+
+.sidebar .logo h1 {
+    font-size: 2rem;
+}
+
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 14px 20px;
+    border-radius: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-item i {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.1), rgba(112, 0, 255, 0.1));
+    color: var(--primary);
+    border-left: 4px solid var(--primary);
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    height: 100vh;
+}
+
 /* Main Container */
 .app-container {
     width: 100%;
     max-width: 1000px;
+    margin: 0 auto;
     padding: 2rem;
     z-index: 1;
     display: flex;
@@ -714,6 +787,38 @@ audio::-webkit-media-controls-panel {
 }
 
 /* Responsive */
+@media (max-width: 768px) {
+    .app-layout {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        padding: 1rem;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .sidebar .logo {
+        margin-bottom: 0;
+    }
+    
+    .nav-menu {
+        flex-direction: row;
+    }
+    
+    .nav-item {
+        padding: 10px;
+    }
+    
+    .nav-item span {
+        display: none;
+    }
+}
+
 @media (max-width: 600px) {
     .settings-row {
         flex-direction: column;
