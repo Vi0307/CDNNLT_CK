@@ -114,8 +114,6 @@ async def convert(request: ConvertRequest):
         source = process_data.get("source", "unknown")
         if not script:
             raise HTTPException(status_code=422, detail="AI xử lý thất bại, không có kịch bản.")
-        if source == "mock" and os.getenv("USE_MOCK", "false").lower() != "true":
-            raise HTTPException(status_code=502, detail="Process service đang trả mock dù USE_MOCK=false.")
 
         # ── STEP 3: TTS ────────────────────────────────────────────────
         tts_text = _prepare_tts_text(script)
