@@ -10,10 +10,12 @@ services:
       - CONTENT_SERVICE_URL=http://content-service:8001
       - PROCESS_SERVICE_URL=http://process-service:8002
       - TTS_SERVICE_URL=http://tts-service:8003
+      - LIBRARY_SERVICE_URL=http://library-service:8005
     depends_on:
       - content-service
       - process-service
       - tts-service
+      - library-service
     volumes:
       - ./services/api-gateway/app:/app/app
 
@@ -77,6 +79,35 @@ services:
     volumes:
       - ./services/tts-service/app:/app/app
       - ./services/tts-service/audio_output:/app/audio_output
+
+  # ── Library Service (Lưu trữ podcast) ───────────────────────────────
+  library-service:
+    build: ./services/library-service
+    ports:
+      - "8005:8005"
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      - db
+    volumes:
+      - ./services/library-service/app:/app/app
+
+  # ── Database (PostgreSQL) ──────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
 
 networks:
   default:
