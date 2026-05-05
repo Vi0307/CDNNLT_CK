@@ -14,6 +14,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const progressContainer = document.getElementById('progress-container');
     const resultContainer = document.getElementById('result-container');
 
+    // Voice mapping based on language
+    const voiceMap = {
+        'vi': [
+            { value: 'vi-VN-Neural2-A', label: 'Giọng Nữ (Miền Nam)' },
+            { value: 'vi-VN-Neural2-D', label: 'Giọng Nam (Miền Bắc)' }
+        ],
+        'en': [
+            { value: 'en-US-Neural2-F', label: 'Female (US English)' },
+            { value: 'en-US-Neural2-J', label: 'Male (US English)' }
+        ],
+        'fr': [
+            { value: 'fr-FR-Neural2-A', label: 'Giọng Nữ (Pháp)' },
+            { value: 'fr-FR-Neural2-B', label: 'Giọng Nam (Pháp)' }
+        ],
+        'ja': [
+            { value: 'ja-JP-Neural2-A', label: 'Giọng Nữ (Nhật)' },
+            { value: 'ja-JP-Neural2-B', label: 'Giọng Nam (Nhật)' }
+        ]
+    };
+
+    function updateVoiceOptions() {
+        if (!langSelect || !voiceSelect) return;
+        const selectedLang = langSelect.value;
+        const voices = voiceMap[selectedLang] || voiceMap['vi'];
+        
+        voiceSelect.innerHTML = '';
+        voices.forEach(voice => {
+            const option = document.createElement('option');
+            option.value = voice.value;
+            option.textContent = voice.label;
+            voiceSelect.appendChild(option);
+        });
+    }
+
+    if (langSelect && voiceSelect) {
+        langSelect.addEventListener('change', updateVoiceOptions);
+        updateVoiceOptions(); // Set initial options
+    }
+
     // Steps
     const step1 = document.getElementById('step-1');
     const step2 = document.getElementById('step-2');
@@ -25,7 +64,101 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetBtn = document.getElementById('reset-btn');
 
     // New AI UI Elements
-    const summaryContent = document.getElementById('summary-content');
+    const dynamicSummaryContent = document.getElementById('dynamic-summary-content');
+    const tabOriginal = document.getElementById('tab-original');
+    const tabTranslated = document.getElementById('tab-translated');
+
+    let currentOriginalSummary = '';
+    let currentTranslatedSummary = '';
+    let currentOriginalHTML = '';
+    let currentTranslatedHTML = '';
+    let activeTab = 'original';
+
+    function prepareHighlightableText(text) {
+        if (!text) return '';
+        // Phân tách theo câu (kết thúc bằng .!? theo sau là khoảng trắng hoặc xuống dòng)
+        const tokens = text.match(/[\s\S]*?(?:[.!?]+(?=\s|$)|\n|$)[\s]*/g).filter(t => t.length > 0);
+        let html = '';
+        let charIndex = 0;
+        tokens.forEach(token => {
+            html += `<span class="highlightable-word" data-start="${charIndex}" data-end="${charIndex + token.length}" style="transition: background-color 0.15s ease; border-radius: 4px; padding: 2px 0;">${token}</span>`;
+            charIndex += token.length;
+        });
+        return html;
+    }
+
+    // Tab switching logic
+    if (tabOriginal && tabTranslated && dynamicSummaryContent) {
+        tabOriginal.addEventListener('click', () => {
+            activeTab = 'original';
+            tabOriginal.style.background = 'var(--primary-color)';
+            tabOriginal.style.color = 'white';
+            tabTranslated.style.background = 'transparent';
+            tabTranslated.style.color = 'var(--text-secondary)';
+            
+            if (currentOriginalHTML) {
+                dynamicSummaryContent.innerHTML = `<p>${currentOriginalHTML}</p>`;
+            } else {
+                dynamicSummaryContent.innerHTML = `<p>Bản tóm tắt ngôn ngữ gốc không khả dụng.</p>`;
+            }
+        });
+
+        tabTranslated.addEventListener('click', () => {
+            activeTab = 'translated';
+            tabTranslated.style.background = 'var(--primary-color)';
+            tabTranslated.style.color = 'white';
+            tabOriginal.style.background = 'transparent';
+            tabOriginal.style.color = 'var(--text-secondary)';
+            
+            if (currentTranslatedHTML) {
+                dynamicSummaryContent.innerHTML = `<p>${currentTranslatedHTML}</p>`;
+            } else {
+                dynamicSummaryContent.innerHTML = `<p>Bản tóm tắt ngôn ngữ chuyển đổi không khả dụng.</p>`;
+            }
+        });
+    }
+
+    // Audio highlight sync
+    if (audioPlayer && dynamicSummaryContent) {
+        audioPlayer.addEventListener('timeupdate', () => {
+            if (!audioPlayer.duration || audioPlayer.paused) return;
+            const progress = audioPlayer.currentTime / audioPlayer.duration;
+            
+            const activeText = activeTab === 'original' ? currentOriginalSummary : currentTranslatedSummary;
+            if (!activeText) return;
+            
+            const targetCharIndex = progress * activeText.length;
+            const spans = dynamicSummaryContent.querySelectorAll('.highlightable-word');
+            let currentHighlighted = null;
+            
+            spans.forEach(span => {
+                const start = parseInt(span.getAttribute('data-start'));
+                const end = parseInt(span.getAttribute('data-end'));
+                
+                if (targetCharIndex >= start && targetCharIndex <= end) {
+                    span.style.backgroundColor = '#ffd54f'; // Yellow highlight
+                    span.style.color = '#000';
+                    span.style.borderRadius = '3px';
+                    span.classList.add('active');
+                    currentHighlighted = span;
+                } else {
+                    span.style.backgroundColor = 'transparent';
+                    span.style.color = 'inherit';
+                    span.classList.remove('active');
+                }
+            });
+            
+            // Tự động cuộn đến từ đang đọc nếu nó ra ngoài vùng nhìn thấy
+            if (currentHighlighted) {
+                const containerRect = dynamicSummaryContent.getBoundingClientRect();
+                const spanRect = currentHighlighted.getBoundingClientRect();
+                if (spanRect.bottom > containerRect.bottom || spanRect.top < containerRect.top) {
+                    dynamicSummaryContent.scrollTop += (spanRect.top - containerRect.top) - (containerRect.height / 2);
+                }
+            }
+        });
+    }
+
     const chatMessages = document.getElementById('chat-messages');
     const chatInput = document.getElementById('chat-input');
     const sendChatBtn = document.getElementById('send-chat-btn');
@@ -73,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!result.audio_url) throw new Error('Tạo âm thanh thất bại.');
 
-            showResult(result.audio_url, result.summary);
+            showResult(result.audio_url, result.script, result.original_script);
 
         } catch (error) {
             console.error('Pipeline Error:', error);
@@ -193,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     }
 
-    function showResult(audioPath, summaryText) {
+    function showResult(audioPath, summaryText, originalSummaryText) {
         // Đảm bảo tất cả steps đều done trước khi hiện kết quả
         updateStep(step1, 'done', 'Hoàn tất');
         updateStep(step2, 'done', 'Hoàn tất');
@@ -214,10 +347,16 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadBtn.href = fullAudioUrl;
             
             // Update Summary
-            if (summaryText) {
-                summaryContent.innerHTML = `<p>${summaryText}</p>`;
-            } else {
-                summaryContent.innerHTML = `<p>Đây là bản tóm tắt tự động nội dung bài viết. Bài viết cung cấp các thông tin chính yếu được trích xuất bằng AI, giúp bạn nắm bắt nhanh chóng ngữ cảnh trước khi nghe podcast.</p>`;
+            currentOriginalSummary = originalSummaryText || '';
+            currentTranslatedSummary = summaryText || '';
+            currentOriginalHTML = prepareHighlightableText(currentOriginalSummary);
+            currentTranslatedHTML = prepareHighlightableText(currentTranslatedSummary);
+
+            // Mặc định chọn tab ngôn ngữ gốc khi có kết quả
+            if (tabOriginal) {
+                tabOriginal.click();
+            } else if (dynamicSummaryContent) {
+                dynamicSummaryContent.innerHTML = `<p>${currentOriginalHTML}</p>`;
             }
             
             // Reset chat

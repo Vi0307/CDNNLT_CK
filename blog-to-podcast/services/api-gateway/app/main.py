@@ -42,9 +42,11 @@ class ConvertRequest(BaseModel):
 
 class ConvertResponse(BaseModel):
     status: str
-    audio_url: str
+    audio_url: str  
     message: str
     summary: str
+    original_script: str = ""
+    script: str = ""
     source: str
 
 
@@ -111,6 +113,7 @@ async def convert(request: ConvertRequest):
         process_data = process_res.json()
         script = process_data.get("script", "")
         summary = process_data.get("summary", "")
+        original_script = process_data.get("original_script", "")
         source = process_data.get("source", "unknown")
         if not script:
             raise HTTPException(status_code=422, detail="AI xử lý thất bại, không có kịch bản.")
@@ -145,6 +148,8 @@ async def convert(request: ConvertRequest):
             audio_url=audio_url,
             message="Tạo podcast thành công",
             summary=summary,
+            original_script=original_script,
+            script=script,
             source=source,
         )
 
@@ -154,7 +159,7 @@ async def convert(request: ConvertRequest):
 @app.get("/download/{filename}")
 async def proxy_download(filename: str):
     """Proxy file audio từ tts-service về browser."""
-    from fastapi.responses import StreamingResponse
+    from fastapi.responses import Response
 
     timeout = httpx.Timeout(60.0)
     async with httpx.AsyncClient(timeout=timeout) as client:
@@ -166,10 +171,14 @@ async def proxy_download(filename: str):
         except httpx.RequestError as e:
             raise HTTPException(status_code=503, detail=f"Không lấy được file audio: {e}")
 
-    return StreamingResponse(
-        content=iter([upstream.content]),
+    return Response(
+        content=upstream.content,
         media_type="audio/mpeg",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(len(upstream.content)),
+            "Accept-Ranges": "bytes"
+        },
     )
 
 
@@ -198,8 +207,16 @@ def _prepare_tts_text(raw: str) -> str:
 def _resolve_voice(language: str, requested: Optional[str]) -> str:
     vi_voices = {"vi-VN-Neural2-A", "vi-VN-Neural2-D"}
     en_voices = {"en-US-Neural2-F", "en-US-Neural2-J"}
+    fr_voices = {"fr-FR-Neural2-A", "fr-FR-Neural2-B"}
+    ja_voices = {"ja-JP-Neural2-A", "ja-JP-Neural2-B"}
+    
     if language == "vi":
         return requested if requested in vi_voices else "vi-VN-Neural2-A"
     if language == "en":
         return requested if requested in en_voices else "en-US-Neural2-F"
+    if language == "fr":
+        return requested if requested in fr_voices else "fr-FR-Neural2-A"
+    if language == "ja":
+        return requested if requested in ja_voices else "ja-JP-Neural2-A"
+        
     return requested or "vi-VN-Neural2-A"

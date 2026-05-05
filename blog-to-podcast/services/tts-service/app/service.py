@@ -14,7 +14,10 @@ async def generate_audio_file(text: str, language: str, voice: str = None) -> tu
         else:
             voice = "vi-VN-Neural2-A"
 
-    filename = f"{uuid.uuid4()}.mp3"
+    import datetime
+    now_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    short_uuid = str(uuid.uuid4())[:6]
+    filename = f"{now_str}_{short_uuid}.mp3"
     filepath = os.path.join(AUDIO_DIR, filename)
     os.makedirs(AUDIO_DIR, exist_ok=True)
 
@@ -22,12 +25,32 @@ async def generate_audio_file(text: str, language: str, voice: str = None) -> tu
         try:
             import edge_tts
             print(f"DEBUG: Using edge-tts fallback. Voice: {voice}")
-            # Nếu Frontend truyền tên giọng Edge-TTS (kết thúc bằng Neural), ta sẽ dùng luôn giọng đó.
-            # Nếu không (hoặc truyền giọng của Google như Neural2), ta dùng giọng mặc định.
-            if voice and voice.endswith("Neural") and "Neural2" not in voice:
+            edge_voice_map = {
+                "vi-VN-Neural2-A": "vi-VN-HoaiMyNeural",
+                "vi-VN-Neural2-D": "vi-VN-NamMinhNeural",
+                "en-US-Neural2-F": "en-US-AriaNeural",
+                "en-US-Neural2-J": "en-US-ChristopherNeural",
+                "fr-FR-Neural2-A": "fr-FR-DeniseNeural",
+                "fr-FR-Neural2-B": "fr-FR-HenriNeural",
+                "ja-JP-Neural2-A": "ja-JP-NanamiNeural",
+                "ja-JP-Neural2-B": "ja-JP-KeitaNeural",
+            }
+            
+            if voice in edge_voice_map:
+                edge_voice = edge_voice_map[voice]
+            elif voice and voice.endswith("Neural") and "Neural2" not in voice:
                 edge_voice = voice
             else:
-                edge_voice = "vi-VN-HoaiMyNeural" if language == "vi" else "en-US-AriaNeural"
+                if language == "vi":
+                    edge_voice = "vi-VN-HoaiMyNeural"
+                elif language == "en":
+                    edge_voice = "en-US-AriaNeural"
+                elif language == "fr":
+                    edge_voice = "fr-FR-DeniseNeural"
+                elif language == "ja":
+                    edge_voice = "ja-JP-NanamiNeural"
+                else:
+                    edge_voice = "en-US-AriaNeural"
                 
             import re
             def split_text(text, max_length=1500):
