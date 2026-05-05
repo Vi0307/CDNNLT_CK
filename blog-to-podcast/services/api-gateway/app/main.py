@@ -224,6 +224,63 @@ CONTEXT: {request.context[:3000]}"""
 
 
 
+# ---------- Chat Q&A ----------
+
+class ChatRequest(BaseModel):
+    question: str
+    context: str
+    language: str = "vi"
+
+
+@app.post("/chat")
+async def chat_qa(request: ChatRequest):
+    """Trả lời câu hỏi dựa trên nội dung bài viết."""
+    prompt = f"""Bạn là AI trả lời câu hỏi dựa trên nội dung bài viết.
+Nhiệm vụ:
+- Nhận câu hỏi từ người dùng
+- Đọc nội dung bài viết (context)
+- Trả lời chính xác dựa trên nội dung
+- Trích dẫn đoạn liên quan từ bài
+BẮT BUỘC:
+- Chỉ trả về JSON hợp lệ
+- Không thêm text ngoài JSON
+- Không tự bịa thông tin ngoài context
+FORMAT:
+{{"answer": "câu trả lời","source": "đoạn trích","confidence": "high | medium | low"}}
+QUY TẮC:
+1. TRẢ LỜI: Ngắn gọn, dễ hiểu, dựa hoàn toàn vào context, không suy đoán ngoài bài
+2. SOURCE: Trích nguyên văn 1–2 câu từ context liên quan nhất, không chỉnh sửa
+3. CONFIDENCE: high → thông tin rõ ràng | medium → suy luận nhẹ | low → không chắc
+4. Nếu không tìm thấy: {{"answer": "Không tìm thấy thông tin trong bài viết","source": "","confidence": "low"}}
+5. Trả lời bằng tiếng Việt
+INPUT:
+QUESTION: {request.question}
+CONTEXT:
+{request.context[:4000]}"""
+
+    timeout = httpx.Timeout(60.0, connect=10.0)
+    ai_url = PROCESS_SERVICE_URL.replace(":8002", ":8004").replace("process-service", "ai-service")
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        try:
+            res = await client.post(
+                f"{ai_url}/generate",
+                json={"prompt": prompt, "system_instruction": "Chỉ trả về JSON hợp lệ, không markdown, không giải thích thêm.", "provider": "claude"},
+            )
+            res.raise_for_status()
+            content = res.json().get("content", "")
+            import json as _json, re as _re
+            try:
+                data = _json.loads(content)
+            except Exception:
+                m = _re.search(r'\{[\s\S]*\}', content)
+                if not m:
+                    raise HTTPException(status_code=502, detail="Không parse được JSON từ AI")
+                data = _json.loads(m.group())
+            return data
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=503, detail=f"Không kết nối được AI service: {e}")
+
+
 @app.get("/download/{filename}")
 async def proxy_download(filename: str):
     """Proxy file audio từ tts-service về browser."""

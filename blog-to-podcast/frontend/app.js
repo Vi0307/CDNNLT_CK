@@ -523,27 +523,77 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = chatInput.value.trim();
         if (!text) return;
 
-        // Add user message
         addChatMessage(text, 'user-message');
         chatInput.value = '';
 
-        // Mute/Mock AI response
-        setTimeout(() => {
-            addChatMessage('Tôi đang phân tích câu hỏi của bạn. Tính năng trả lời tự động chuyên sâu theo ngữ cảnh podcast đang được phát triển.', 'ai-message');
-        }, 1000);
+        // Hiện loading
+        const loadingId = 'loading-' + Date.now();
+        addChatMessage('...', 'ai-message loading', loadingId);
+
+        fetch(`${GATEWAY_URL}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: text, context: currentContext, language: langSelect ? langSelect.value : 'vi' }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            // Xóa loading
+            const loadingEl = document.getElementById(loadingId);
+            if (loadingEl) loadingEl.remove();
+
+            const answer = data.answer || 'Không có câu trả lời.';
+            const source = data.source || '';
+            const confidence = data.confidence || 'low';
+
+            const confidenceColor = confidence === 'high' ? '#4ade80' : confidence === 'medium' ? '#fbbf24' : '#94a3b8';
+            const confidenceLabel = confidence === 'high' ? 'Chắc chắn' : confidence === 'medium' ? 'Khá chắc' : 'Không chắc';
+
+            let html = `<div>${answer}</div>`;
+            if (source) {
+                html += `<div style="margin-top:8px; font-size:0.82rem; color:#94a3b8; border-left:2px solid #a78bfa; padding-left:8px; font-style:italic;">"${source}"</div>`;
+            }
+            html += `<div style="margin-top:6px; font-size:0.75rem; color:${confidenceColor};">● ${confidenceLabel}</div>`;
+
+            addChatMessageHTML(html, 'ai-message');
+        })
+        .catch(err => {
+            const loadingEl = document.getElementById(loadingId);
+            if (loadingEl) loadingEl.remove();
+            addChatMessage(`Lỗi: ${err.message}`, 'ai-message');
+        });
     }
 
-    function addChatMessage(text, type) {
+    function addChatMessage(text, type, id) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${type}`;
+        if (id) msgDiv.id = id;
+        
+        const avatarDiv = document.createElement('div');
+        avatarDiv.className = 'message-avatar';
+        avatarDiv.innerHTML = type.includes('user-message') ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-robot"></i>';
+        
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.className = 'message-bubble';
+        bubbleDiv.textContent = text;
+        
+        msgDiv.appendChild(avatarDiv);
+        msgDiv.appendChild(bubbleDiv);
+        
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addChatMessageHTML(html, type) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${type}`;
         
         const avatarDiv = document.createElement('div');
         avatarDiv.className = 'message-avatar';
-        avatarDiv.innerHTML = type === 'user-message' ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-robot"></i>';
+        avatarDiv.innerHTML = '<i class="fa-solid fa-robot"></i>';
         
         const bubbleDiv = document.createElement('div');
         bubbleDiv.className = 'message-bubble';
-        bubbleDiv.textContent = text;
+        bubbleDiv.innerHTML = html;
         
         msgDiv.appendChild(avatarDiv);
         msgDiv.appendChild(bubbleDiv);
