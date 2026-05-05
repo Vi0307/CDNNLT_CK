@@ -93,6 +93,63 @@
             margin-bottom: 1rem;
             opacity: 0.5;
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+            display: flex !important; /* Keep flex for transition, use pointer-events/opacity to hide */
+        }
+        .modal-content {
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-y: auto;
+            transform: scale(1);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.hidden .modal-content {
+            transform: scale(0.95);
+        }
+        .close-modal-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .close-modal-btn:hover { background: var(--error); }
+        .modal-header { margin-bottom: 1.5rem; padding-right: 50px; }
+        .modal-header h2 { color: var(--primary); margin-bottom: 0.5rem; }
+        
+        .podcast-card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .podcast-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0, 229, 255, 0.2); }
     </style>
 </head>
 <body>
@@ -140,6 +197,67 @@
         </section>
 
             </main>
+        </div>
+    </div>
+
+    <!-- Podcast Detail Modal -->
+    <div id="podcast-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-effect card">
+            <button class="close-modal-btn" id="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header">
+                <h2 id="modal-title">Tiêu đề Podcast</h2>
+                <div class="podcast-meta" id="modal-meta" style="justify-content: flex-start; gap: 20px;">
+                    <!-- Meta info here -->
+                </div>
+            </div>
+            
+            <div class="modal-body result-layout">
+                <!-- Top: Audio and Summary -->
+                <div class="result-top card" style="background: rgba(0,0,0,0.2); padding: 1.5rem;">
+                    <div class="audio-player-container" style="padding: 15px;">
+                        <audio id="modal-audio" controls preload="none">
+                            Trình duyệt không hỗ trợ thẻ audio.
+                        </audio>
+                    </div>
+
+                    <div class="summary-container" style="flex: 1; display: flex; flex-direction: column; min-height: 200px; padding: 1.5rem; margin-top: 1.5rem;">
+                        <div class="summary-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h3 style="margin: 0;"><i class="fa-solid fa-file-lines"></i> Tóm tắt nội dung</h3>
+                            <div class="summary-tabs" style="display: flex; gap: 4px; background: rgba(255, 255, 255, 0.05); padding: 4px; border-radius: 8px;">
+                                <button type="button" id="modal-tab-original" class="tab-btn active" style="background: var(--primary); border: none; padding: 6px 12px; border-radius: 6px; color: var(--bg-dark); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">Ngôn ngữ gốc</button>
+                                <button type="button" id="modal-tab-translated" class="tab-btn" style="background: transparent; border: none; padding: 6px 12px; border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">Ngôn ngữ chuyển đổi</button>
+                            </div>
+                        </div>
+                        <div class="summary-content" id="modal-summary-content" style="flex: 1; font-size: 0.95rem; line-height: 1.6; color: var(--text-main); background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 8px; overflow-y: auto; max-height: 250px;">
+                            <p>Không có nội dung tóm tắt.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom: AI Chat -->
+                <div class="result-bottom card ai-chat-container" style="background: rgba(0,0,0,0.2); padding: 0;">
+                    <div class="chat-header">
+                        <i class="fa-solid fa-robot"></i>
+                        <h3>Trợ lý AI - Hỏi đáp</h3>
+                    </div>
+                    
+                    <div class="chat-messages" id="modal-chat-messages" style="max-height: 250px;">
+                        <div class="message ai-message">
+                            <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
+                            <div class="message-bubble">
+                                Chào bạn! Tôi là trợ lý AI. Bạn có câu hỏi nào về nội dung của podcast này không?
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-area">
+                        <input type="text" id="modal-chat-input" placeholder="Hỏi AI về podcast này..." autocomplete="off">
+                        <button id="modal-send-chat-btn" class="btn-icon">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
