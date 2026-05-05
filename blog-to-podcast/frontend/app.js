@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const audioPlayer = document.getElementById('audio-player');
     const downloadBtn = document.getElementById('download-btn');
     const resetBtn = document.getElementById('reset-btn');
+    const saveBtn = document.getElementById('save-btn');
 
     // New AI UI Elements
     const dynamicSummaryContent = document.getElementById('dynamic-summary-content');
@@ -251,6 +252,45 @@ document.addEventListener('DOMContentLoaded', () => {
         audioPlayer.pause();
         audioPlayer.src = '';
     });
+
+    // ── Save ──────────────────────────────────────────────────────────
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            const history = JSON.parse(localStorage.getItem('podcastHistory') || '[]');
+            
+            // Lấy domain từ URL
+            let domain = 'Bài viết';
+            try {
+                const urlObj = new URL(urlInput.value);
+                domain = urlObj.hostname;
+            } catch (e) {}
+
+            const newItem = {
+                id: Date.now().toString(),
+                url: urlInput.value,
+                title: `Podcast từ ${domain}`,
+                date: new Date().toISOString(),
+                language: langSelect.value,
+                audioUrl: audioPlayer.src,
+                originalSummary: currentOriginalSummary,
+                translatedSummary: currentTranslatedSummary
+            };
+            
+            history.unshift(newItem); // Thêm lên đầu danh sách
+            localStorage.setItem('podcastHistory', JSON.stringify(history));
+            
+            // Hiển thị thông báo thành công
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fa-solid fa-check"></i> Đã lưu';
+            saveBtn.style.background = 'var(--success)';
+            saveBtn.style.color = 'white';
+            setTimeout(() => {
+                saveBtn.innerHTML = originalText;
+                saveBtn.style.background = 'var(--primary-dark)';
+                saveBtn.style.color = 'var(--bg-dark)';
+            }, 2000);
+        });
+    }
 
     // ── Close Toast ────────────────────────────────────────────────────
     closeToastBtn.addEventListener('click', () => {

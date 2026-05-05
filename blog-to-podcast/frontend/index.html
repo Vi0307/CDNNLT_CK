@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- CSS -->
-    <link rel="stylesheet" href="styles.css?v=2">
+    <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
     <!-- Background Elements -->
@@ -21,17 +21,35 @@
         <div class="grid-overlay"></div>
     </div>
 
-    <main class="app-container">
-        <!-- Header -->
-        <header class="app-header">
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-effect" style="border-radius: 0; border-top: none; border-bottom: none; border-left: none;">
             <div class="logo">
                 <div class="logo-icon">
                     <i class="fa-solid fa-podcast"></i>
                 </div>
                 <h1>Blog<span>2</span>Cast</h1>
             </div>
-            <p class="tagline">Biến mọi bài viết thành trải nghiệm âm thanh tuyệt vời</p>
-        </header>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item active">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Tạo Podcast</span>
+                </a>
+                <a href="library.html" class="nav-item">
+                    <i class="fa-solid fa-book-bookmark"></i>
+                    <span>Thư viện</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <main class="app-container">
+                <!-- Header -->
+                <header class="app-header">
+                    <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.5rem; margin-bottom: 10px;">Chuyển đổi bài viết</h2>
+                    <p class="tagline">Biến mọi bài viết thành trải nghiệm âm thanh tuyệt vời</p>
+                </header>
 
         <!-- Main Form Card -->
         <section class="card glass-effect form-section" id="form-container">
@@ -124,8 +142,8 @@
         <!-- Result Section -->
         <section class="result-section hidden" id="result-container">
             <div class="result-layout">
-                <!-- Left Column: Audio & Summary -->
-                <div class="result-left card glass-effect">
+                <!-- Top Block: Audio & Summary -->
+                <div class="result-top card glass-effect">
                     <div class="success-header">
                         <div class="success-icon-wrapper">
                             <i class="fa-solid fa-circle-check"></i>
@@ -156,14 +174,17 @@
                         <a href="#" id="download-btn" class="btn btn-secondary" download>
                             <i class="fa-solid fa-download"></i> Tải MP3
                         </a>
+                        <button id="save-btn" class="btn btn-secondary" style="background: var(--primary-dark); color: var(--bg-dark); border: none;">
+                            <i class="fa-solid fa-bookmark"></i> Lưu
+                        </button>
                         <button id="reset-btn" class="btn btn-outline">
                             <i class="fa-solid fa-rotate-left"></i> Tạo Mới
                         </button>
                     </div>
                 </div>
 
-                <!-- Right Column: AI Q&A Chat -->
-                <div class="result-right card glass-effect ai-chat-container">
+                <!-- Bottom Block: AI Q&A Chat -->
+                <div class="result-bottom card glass-effect ai-chat-container">
                     <div class="chat-header">
                         <i class="fa-solid fa-robot"></i>
                         <h3>Trợ lý AI - Hỏi đáp</h3>
@@ -187,7 +208,9 @@
                 </div>
             </div>
         </section>
-    </main>
+            </main>
+        </div>
+    </div>
 
     <!-- Error Toast -->
     <div class="toast-notification hidden" id="error-toast">

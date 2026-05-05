@@ -45,6 +45,7 @@ class ConvertResponse(BaseModel):
     status: str
     audio_url: str  
     message: str
+    title: str = ""
     summary: str
     original_script: str = ""
     script: str = ""
@@ -111,6 +112,7 @@ async def convert(request: ConvertRequest):
 
         crawl_data = crawl_res.json()
         raw_text = crawl_data.get("text", "")
+        article_title = crawl_data.get("title", "")
         if not raw_text:
             raise HTTPException(status_code=422, detail="Không thể trích xuất nội dung từ URL này.")
 
@@ -165,6 +167,7 @@ async def convert(request: ConvertRequest):
             status="success",
             audio_url=audio_url,
             message="Tạo podcast thành công",
+            title=article_title,
             summary=summary,
             original_script=original_script,
             script=script,
