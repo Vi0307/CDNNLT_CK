@@ -1,14 +1,46 @@
 import json
 import random
 import re
+import ssl
 from typing import Optional, Tuple
 
 import requests
 import trafilatura
+import urllib3
 from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter
 
 from app.config import settings
 from app.schemas import CrawlResponse
+
+
+class _LegacySSLAdapter(HTTPAdapter):
+    """Adapter cho phép kết nối tới các site dùng SSL legacy renegotiation."""
+    def init_poolmanager(self, *args, **kwargs):
+        ctx = ssl.create_default_context()
+        ctx.options |= getattr(ssl, "OP_LEGACY_SERVER_CONNECT", 0x4)
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        kwargs["ssl_context"] = ctx
+        return super().init_poolmanager(*args, **kwargs)
+
+
+def _get(url: str) -> requests.Response:
+    """Gửi GET request, tự fallback sang legacy SSL nếu cần."""
+    session = requests.Session()
+    try:
+        resp = session.get(url, timeout=20, headers=_HEADERS, allow_redirects=True)
+        resp.raise_for_status()
+        return resp
+    except Exception as e:
+        if "SSL" in str(e) or "ssl" in str(e).lower():
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+            session2 = requests.Session()
+            session2.mount("https://", _LegacySSLAdapter())
+            resp2 = session2.get(url, timeout=20, headers=_HEADERS, allow_redirects=True, verify=False)
+            resp2.raise_for_status()
+            return resp2
+        raise
 
 _MOCK_ARTICLES = [
     {"title": "Mẫu bài viết về Microservices", "text": "Nội dung giả lập về kiến trúc microservices..."},
@@ -244,8 +276,7 @@ def crawl_url(url: str) -> CrawlResponse:
         )
 
     try:
-        response = requests.get(url, timeout=20, headers=_HEADERS, allow_redirects=True)
-        response.raise_for_status()
+        response = _get(url)
         if not response.encoding or response.encoding.lower() == "iso-8859-1":
             response.encoding = response.apparent_encoding or "utf-8"
         html = response.text
@@ -262,10 +293,8 @@ def crawl_url(url: str) -> CrawlResponse:
             is_mock=False,
         )
     except Exception as e:
-        return CrawlResponse(
-            url=url,
-            title="Lỗi xử lý URL",
-            text=f"Không thể bóc tách nội dung từ URL này. Chi tiết lỗi: {str(e)}",
-            word_count=0,
-            is_mock=False,
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=422,
+            detail=f"Không thể bóc tách nội dung từ URL này. Chi tiết lỗi: {str(e)}"
         )
