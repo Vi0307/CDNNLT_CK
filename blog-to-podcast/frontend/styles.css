@@ -499,15 +499,15 @@ label {
     color: var(--error);
 }
 
-/* Result Section (2 Columns) */
+/* Result Section (Stacked) */
 .result-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 1.5rem;
     width: 100%;
 }
 
-.result-left {
+.result-top {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -834,9 +834,5 @@ audio::-webkit-media-controls-panel {
     
     .logo h1 {
         font-size: 2.2rem;
-    }
-    
-    .result-layout {
-        grid-template-columns: 1fr;
     }
 }
