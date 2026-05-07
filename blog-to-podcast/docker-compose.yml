@@ -11,13 +11,15 @@ services:
       - PROCESS_SERVICE_URL=http://process-service:8002
       - TTS_SERVICE_URL=http://tts-service:8003
       - LIBRARY_SERVICE_URL=http://library-service:8005
+      - NEWS_SERVICE_URL=http://news-service:8006
     depends_on:
       - content-service
       - process-service
       - tts-service
       - library-service
+      - news-service
     volumes:
-      - ./services/api-gateway/app:/app/app
+      - ./services/api-gateway/app:/app
 
   # ── Content Service (crawl URL) ────────────────────────────────────────
   content-service:
@@ -79,6 +81,17 @@ services:
     volumes:
       - ./services/tts-service/app:/app/app
       - ./services/tts-service/audio_output:/app/audio_output
+
+  # ── News Service (tìm bài báo theo chủ đề qua RSS) ──────────────────
+  news-service:
+    build: ./services/news-service
+    ports:
+      - "8006:8006"
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./services/news-service/app:/app/app
 
   # ── Library Service (Lưu trữ podcast) ───────────────────────────────
   library-service:

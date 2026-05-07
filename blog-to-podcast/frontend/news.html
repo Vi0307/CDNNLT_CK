@@ -1,0 +1,255 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog2Cast - Podcast Tin Tức AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css?v=4">
+    <style>
+        .topic-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+        .chip{padding:7px 16px;border-radius:20px;font-size:.85rem;cursor:pointer;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);color:#a78bfa;transition:all .2s;user-select:none;font-weight:500}
+        .chip:hover{background:rgba(139,92,246,.22);border-color:rgba(139,92,246,.45);transform:translateY(-1px)}
+        .chip.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
+        .result-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+        @media(max-width:900px){.result-grid-2{grid-template-columns:1fr}}
+        .sec-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:#a78bfa;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+        .article-list{display:flex;flex-direction:column;gap:8px}
+        .article-card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:11px 14px;display:flex;gap:10px;align-items:flex-start;transition:border-color .2s}
+        .article-card:hover{border-color:rgba(139,92,246,.35);background:rgba(139,92,246,.06)}
+        .article-num{min-width:24px;height:24px;border-radius:50%;background:rgba(139,92,246,.18);color:#a78bfa;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;flex-shrink:0}
+        .article-card a{color:#e2e8f0;text-decoration:none;font-size:.87rem;font-weight:500;line-height:1.45}
+        .article-card a:hover{color:#a78bfa}
+        .source-badge{display:inline-block;font-size:.68rem;background:rgba(139,92,246,.14);color:#a78bfa;padding:2px 8px;border-radius:8px;margin-top:4px;font-weight:600}
+        .text-box{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:16px;font-size:.88rem;line-height:1.8;color:#cbd5e1;max-height:300px;overflow-y:auto;white-space:pre-wrap}
+        .text-box::-webkit-scrollbar{width:4px}
+        .text-box::-webkit-scrollbar-thumb{background:rgba(139,92,246,.3);border-radius:2px}
+        .tab-group{display:flex;gap:4px;background:rgba(255,255,255,.05);padding:4px;border-radius:8px}
+        .tab-btn{border:none;padding:5px 14px;border-radius:6px;cursor:pointer;font-size:.78rem;font-weight:600;transition:all .2s;background:transparent;color:#94a3b8}
+        .tab-btn.active{background:#7c3aed;color:#fff}
+        .audio-card{background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);border-radius:14px;padding:20px 24px}
+        .audio-card audio{width:100%;margin-top:12px;border-radius:8px}
+        .action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+        .chat-wrap{display:flex;flex-direction:column;gap:12px}
+        .chat-header{display:flex;align-items:center;gap:8px}
+        .chat-messages{overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-right:4px;min-height:180px;max-height:280px}
+        .chat-messages::-webkit-scrollbar{width:3px}
+        .chat-messages::-webkit-scrollbar-thumb{background:rgba(139,92,246,.3);border-radius:2px}
+        .chat-msg{display:flex;gap:8px;align-items:flex-start}
+        .chat-msg.user{flex-direction:row-reverse}
+        .chat-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;flex-shrink:0}
+        .chat-avatar.ai{background:rgba(139,92,246,.2);color:#a78bfa}
+        .chat-avatar.user{background:rgba(99,102,241,.2);color:#818cf8}
+        .chat-bubble{max-width:82%;padding:9px 13px;border-radius:12px;font-size:.86rem;line-height:1.55;color:#e2e8f0}
+        .chat-bubble.ai{background:rgba(255,255,255,.06);border-radius:4px 12px 12px 12px}
+        .chat-bubble.user{background:rgba(124,58,237,.22);border-radius:12px 4px 12px 12px}
+        .chat-bubble .src-quote{margin-top:6px;font-size:.79rem;color:#94a3b8;font-style:italic;border-left:2px solid #7c3aed;padding-left:8px}
+        .chat-bubble .conf-badge{margin-top:4px;font-size:.73rem}
+        .chat-input-row{display:flex;gap:8px}
+        .chat-input-row input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:9px 14px;color:#e2e8f0;font-size:.87rem;outline:none;transition:border-color .2s}
+        .chat-input-row input:focus{border-color:rgba(139,92,246,.5)}
+        .chat-send-btn{width:38px;height:38px;border-radius:10px;background:#7c3aed;border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0}
+        .chat-send-btn:hover{background:#6d28d9}
+        .chat-send-btn:disabled{opacity:.5;cursor:not-allowed}
+        #sel-tooltip{display:none;position:fixed;z-index:9998;background:#7c3aed;color:#fff;border-radius:8px;padding:5px 13px;font-size:.81rem;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(124,58,237,.55);white-space:nowrap;user-select:none}
+        #explain-popup{display:none;position:fixed;z-index:9999;background:#1a1a2e;border:1px solid rgba(139,92,246,.4);border-radius:14px;padding:18px;max-width:310px;min-width:230px;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+    </style>
+</head>
+<body>
+    <div class="bg-effects">
+        <div class="orb orb-1"></div><div class="orb orb-2"></div>
+        <div class="orb orb-3"></div><div class="grid-overlay"></div>
+    </div>
+    <div class="app-layout">
+        <aside class="sidebar glass-effect" style="border-radius:0;border-top:none;border-bottom:none;border-left:none;">
+            <div class="logo">
+                <div class="logo-icon"><i class="fa-solid fa-podcast"></i></div>
+                <h1>Blog<span>2</span>Cast</h1>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Tạo Podcast</span></a>
+                <a href="news.html" class="nav-item active"><i class="fa-solid fa-newspaper"></i><span>Tin tức</span></a>
+                <a href="library.html" class="nav-item"><i class="fa-solid fa-book-bookmark"></i><span>Thư viện</span></a>
+            </nav>
+        </aside>
+        <div class="main-content">
+            <main class="app-container">
+                <header class="app-header">
+                    <h2 style="font-family:'Outfit',sans-serif;font-size:2.4rem;margin-bottom:8px;">Podcast từ Tin Tức</h2>
+                    <p class="tagline">Chọn chủ đề — AI tự tìm, tổng hợp và đọc cho bạn nghe</p>
+                </header>
+
+                <!-- Form -->
+                <section class="card glass-effect form-section" id="form-container">
+                    <div class="input-group">
+                        <label for="topic-input">Chủ đề tin tức</label>
+                        <div class="input-field">
+                            <i class="fa-solid fa-newspaper icon-left"></i>
+                            <input type="text" id="topic-input" placeholder="Ví dụ: giáo dục, công nghệ, y tế..." autocomplete="off">
+                            <div class="input-highlight"></div>
+                        </div>
+                    </div>
+
+                    <div class="topic-chips">
+                        <span class="chip" data-topic="chính trị">🏛️ Chính trị</span>
+                        <span class="chip" data-topic="giáo dục">📚 Giáo dục</span>
+                        <span class="chip" data-topic="công nghệ">💻 Công nghệ</span>
+                        <span class="chip" data-topic="y tế">🏥 Y tế</span>
+                        <span class="chip" data-topic="kinh tế">💰 Kinh tế</span>
+                        <span class="chip" data-topic="thể thao">⚽ Thể thao</span>
+                        <span class="chip" data-topic="giải trí">🎬 Giải trí</span>
+                        <span class="chip" data-topic="thế giới">🌍 Thế giới</span>
+                        <span class="chip" data-topic="pháp luật">⚖️ Pháp luật</span>
+                        <span class="chip" data-topic="môi trường">🌿 Môi trường</span>
+                    </div>
+
+                    <div class="settings-row" style="margin-top:18px;">
+                        <div class="input-group half">
+                            <label for="lang-select">Ngôn ngữ podcast</label>
+                            <div class="select-field">
+                                <i class="fa-solid fa-globe icon-left"></i>
+                                <select id="lang-select">
+                                    <option value="vi">Tiếng Việt</option>
+                                    <option value="en">English</option>
+                                    <option value="fr">Tiếng Pháp (Français)</option>
+                                    <option value="ja">Tiếng Nhật (日本語)</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down icon-right"></i>
+                            </div>
+                        </div>
+                        <div class="input-group half">
+                            <label for="voice-select">Giọng đọc</label>
+                            <div class="select-field">
+                                <i class="fa-solid fa-waveform-lines icon-left"></i>
+                                <select id="voice-select">
+                                    <option value="vi-VN-Neural2-A">Giọng Nữ (Miền Nam)</option>
+                                    <option value="vi-VN-Neural2-D">Giọng Nam (Miền Bắc)</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down icon-right"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-primary btn-glow" id="generate-btn" style="margin-top:18px;">
+                        <span class="btn-text">Tạo Podcast Tin Tức</span>
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <div class="loader-spinner hidden" id="btn-loader"></div>
+                    </button>
+                </section>
+
+                <!-- Progress -->
+                <section class="progress-section hidden" id="progress-container">
+                    <div class="steps-wrapper glass-effect">
+                        <div class="step pending" id="step-1">
+                            <div class="step-icon-box"><i class="fa-solid fa-magnifying-glass"></i><div class="ring"></div></div>
+                            <div class="step-info"><h3>Tìm bài báo</h3><p class="status-text">Đang chờ...</p></div>
+                        </div>
+                        <div class="step-divider"></div>
+                        <div class="step pending" id="step-2">
+                            <div class="step-icon-box"><i class="fa-solid fa-spider"></i><div class="ring"></div></div>
+                            <div class="step-info"><h3>Crawl nội dung</h3><p class="status-text">Đang chờ...</p></div>
+                        </div>
+                        <div class="step-divider"></div>
+                        <div class="step pending" id="step-3">
+                            <div class="step-icon-box"><i class="fa-solid fa-brain"></i><div class="ring"></div></div>
+                            <div class="step-info"><h3>AI tổng hợp</h3><p class="status-text">Đang chờ...</p></div>
+                        </div>
+                        <div class="step-divider"></div>
+                        <div class="step pending" id="step-4">
+                            <div class="step-icon-box"><i class="fa-solid fa-compact-disc"></i><div class="ring"></div></div>
+                            <div class="step-info"><h3>Tạo audio</h3><p class="status-text">Đang chờ...</p></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Result -->
+                <section class="result-section hidden" id="result-container">
+                    <div class="audio-card" style="margin-bottom:18px;">
+                        <div class="success-header" style="margin-bottom:6px;">
+                            <div class="success-icon-wrapper"><i class="fa-solid fa-circle-check"></i></div>
+                            <h2 id="podcast-title" style="font-family:'Outfit',sans-serif;font-size:1.5rem;font-weight:700;color:#e2e8f0;margin:0 0 4px;">Podcast Đã Sẵn Sàng!</h2>
+                        </div>
+                        <span id="topic-tag" style="display:inline-block;font-size:.78rem;background:rgba(139,92,246,.18);color:#a78bfa;padding:3px 10px;border-radius:10px;font-weight:600;"></span>
+                        <audio id="audio-player" controls preload="metadata"></audio>
+                        <div class="action-row">
+                            <a href="#" id="download-btn" class="btn btn-secondary" download><i class="fa-solid fa-download"></i> Tải MP3</a>
+                            <button id="save-btn" class="btn btn-secondary" style="background:#5b21b6;color:#fff;border:none;"><i class="fa-solid fa-bookmark"></i> Lưu vào thư viện</button>
+                            <button id="reset-btn" class="btn btn-outline"><i class="fa-solid fa-rotate-left"></i> Tạo mới</button>
+                        </div>
+                    </div>
+
+                    <div class="result-grid-2">
+                        <div class="card glass-effect" style="padding:20px;">
+                            <div class="sec-label"><i class="fa-solid fa-newspaper"></i> Nguồn tin tức (<span id="article-count">0</span> bài)</div>
+                            <div class="article-list" id="article-list"></div>
+                        </div>
+                        <div class="card glass-effect" style="padding:20px;">
+                            <div class="sec-label"><i class="fa-solid fa-file-lines"></i> Tóm tắt nội dung</div>
+                            <div class="text-box" id="summary-box"></div>
+                        </div>
+                    </div>
+
+                    <div class="result-grid-2">
+                        <div class="card glass-effect" style="padding:20px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                <div class="sec-label" style="margin-bottom:0;cursor:pointer;" id="script-toggle">
+                                    <i class="fa-solid fa-scroll"></i> Script Podcast
+                                    <i class="fa-solid fa-chevron-down" id="script-chevron" style="margin-left:4px;transition:transform .2s;"></i>
+                                </div>
+                                <div class="tab-group" id="script-tabs" style="display:none;">
+                                    <button type="button" class="tab-btn active" id="tab-translated">VI</button>
+                                    <button type="button" class="tab-btn" id="tab-original">Tiếng Việt</button>
+                                </div>
+                            </div>
+                            <div class="text-box" id="script-box" style="max-height:340px;"></div>
+                        </div>
+                        <div class="card glass-effect" style="padding:20px;display:flex;flex-direction:column;">
+                            <div class="chat-wrap">
+                                <div class="chat-header">
+                                    <i class="fa-solid fa-robot" style="color:#a78bfa;font-size:1rem;"></i>
+                                    <h4 style="margin:0;font-size:.95rem;font-weight:600;color:#e2e8f0;">Hỏi AI về tin tức này</h4>
+                                </div>
+                                <div class="chat-messages" id="chat-messages">
+                                    <div class="chat-msg">
+                                        <div class="chat-avatar ai"><i class="fa-solid fa-robot"></i></div>
+                                        <div class="chat-bubble ai">Chào bạn! Tôi đã đọc xong các bài báo. Bạn muốn hỏi gì?</div>
+                                    </div>
+                                </div>
+                                <div class="chat-input-row">
+                                    <input type="text" id="chat-input" placeholder="Hỏi về nội dung tin tức...">
+                                    <button class="chat-send-btn" id="chat-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div class="toast-notification hidden" id="error-toast">
+        <div class="toast-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="toast-content"><h4>Lỗi</h4><p id="error-msg">Đã xảy ra lỗi.</p></div>
+        <button class="close-toast" id="close-toast-btn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div id="sel-tooltip"><i class="fa-solid fa-book-open"></i> Giải thích</div>
+
+    <div id="explain-popup">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span style="font-size:.72rem;color:#a78bfa;font-weight:700;"><i class="fa-solid fa-book-open"></i> Giải thích</span>
+            <button id="ep-close" style="background:none;border:none;color:#666;cursor:pointer;font-size:1rem;padding:0;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="ep-word" style="font-size:1.05rem;font-weight:700;color:#e2e8f0;margin-bottom:10px;"></div>
+        <div id="ep-loading" style="text-align:center;padding:8px;color:#a78bfa;"><i class="fa-solid fa-spinner fa-spin"></i> Đang giải thích...</div>
+        <div id="ep-content" style="display:none;">
+            <div id="ep-meaning" style="font-size:.88rem;color:#cbd5e1;line-height:1.6;margin-bottom:6px;"></div>
+            <div id="ep-example" style="font-size:.81rem;color:#94a3b8;font-style:italic;border-left:2px solid #7c3aed;padding-left:8px;"></div>
+        </div>
+        <div id="ep-error" style="display:none;color:#f87171;font-size:.84rem;"></div>
+    </div>
+
+    <script src="news.js?v=5"></script>
+</body>
+</html>

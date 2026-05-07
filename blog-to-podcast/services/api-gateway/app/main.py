@@ -29,6 +29,7 @@ CONTENT_SERVICE_URL = os.getenv("CONTENT_SERVICE_URL", "http://content-service:8
 PROCESS_SERVICE_URL = os.getenv("PROCESS_SERVICE_URL", "http://process-service:8002")
 TTS_SERVICE_URL     = os.getenv("TTS_SERVICE_URL",     "http://tts-service:8003")
 LIBRARY_SERVICE_URL = os.getenv("LIBRARY_SERVICE_URL", "http://library-service:8005")
+NEWS_SERVICE_URL    = os.getenv("NEWS_SERVICE_URL",    "http://news-service:8006")
 
 TTS_SAFE_MAX_CHARS = 4500
 
@@ -279,6 +280,217 @@ CONTEXT:
             return data
         except httpx.RequestError as e:
             raise HTTPException(status_code=503, detail=f"Không kết nối được AI service: {e}")
+
+
+# ---------- News Search (proxy to news-service) ----------
+
+class NewsSearchRequest(BaseModel):
+    topic: str
+    limit: int = 5
+
+
+@app.post("/news/search")
+async def news_search(request: NewsSearchRequest):
+    timeout = httpx.Timeout(30.0, connect=10.0)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        try:
+            res = await client.post(f"{NEWS_SERVICE_URL}/news/search", json=request.dict())
+            res.raise_for_status()
+            return res.json()
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=503, detail=f"Không kết nối được news-service: {e}")
+
+
+# ---------- Generate News Podcast ----------
+
+class NewsPodcastRequest(BaseModel):
+    topic: str
+    language: str = "vi"
+    voice: Optional[str] = None
+    max_articles: int = 5
+
+
+class NewsPodcastResponse(BaseModel):
+    status: str
+    topic: str
+    title: str
+    summary: str
+    script: str
+    script_vi: str = ""
+    audio_url: str
+    articles: list
+    source: str
+
+
+@app.post("/generate-news-podcast", response_model=NewsPodcastResponse)
+async def generate_news_podcast(request: NewsPodcastRequest):
+    """
+    Full pipeline: Chủ đề → Tìm bài báo → Crawl → AI tổng hợp → TTS → Audio
+    """
+    timeout = httpx.Timeout(180.0, connect=10.0)
+    ai_url = PROCESS_SERVICE_URL.replace(":8002", ":8004").replace("process-service", "ai-service")
+
+    async with httpx.AsyncClient(timeout=timeout) as client:
+
+        # ── STEP 1: Tìm bài báo theo chủ đề ──────────────────────────
+        logger.info(f"[NEWS] Searching topic: {request.topic}")
+        try:
+            news_res = await client.post(
+                f"{NEWS_SERVICE_URL}/news/search",
+                json={"topic": request.topic, "limit": request.max_articles},
+            )
+            news_res.raise_for_status()
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=503, detail=f"[News] Không kết nối được news-service: {e}")
+
+        news_data = news_res.json()
+        articles_meta = news_data.get("data", [])
+        if not articles_meta:
+            raise HTTPException(status_code=404, detail=f"Không tìm thấy bài báo nào về chủ đề '{request.topic}'")
+
+        logger.info(f"[NEWS] Found {len(articles_meta)} articles")
+
+        # ── STEP 2: Crawl nội dung từng bài ──────────────────────────
+        crawled_articles = []
+        for article in articles_meta:
+            try:
+                crawl_res = await client.post(
+                    f"{CONTENT_SERVICE_URL}/crawl",
+                    json={"url": article["url"]},
+                )
+                if crawl_res.status_code == 200:
+                    crawl_data = crawl_res.json()
+                    text = crawl_data.get("text", "").strip()
+                    if text and len(text) > 100:
+                        crawled_articles.append({
+                            "title": crawl_data.get("title") or article["title"],
+                            "content": text[:3000],
+                            "source": article.get("source", ""),
+                            "url": article["url"],
+                        })
+            except Exception as e:
+                logger.warning(f"[CRAWL] Skip {article['url']}: {e}")
+                continue
+
+        if not crawled_articles:
+            raise HTTPException(status_code=422, detail="Không crawl được nội dung bài báo nào")
+
+        logger.info(f"[CRAWL] Crawled {len(crawled_articles)} articles")
+
+        # ── STEP 3: AI tổng hợp nhiều bài ────────────────────────────
+        articles_text = "\n\n---\n\n".join(
+            f"BÀI {i+1}: {a['title']} (Nguồn: {a['source']})\n{a['content']}"
+            for i, a in enumerate(crawled_articles)
+        )
+
+        lang_name = {"vi": "tiếng Việt", "en": "tiếng Anh", "fr": "tiếng Pháp", "ja": "tiếng Nhật"}.get(request.language, "tiếng Việt")
+        need_translation = request.language != "vi"
+
+        if need_translation:
+            prompt = f"""Bạn là AI chuyên tổng hợp tin tức và tạo podcast.
+Nhiệm vụ:
+- Đọc {len(crawled_articles)} bài báo về chủ đề "{request.topic}"
+- Tóm tắt các ý chính, không lặp ý
+- Tạo 2 phiên bản script podcast:
+  1. script_vi: script bằng tiếng Việt tự nhiên
+  2. script: script dịch sang {lang_name}, tự nhiên như người bản ngữ
+
+Yêu cầu script:
+- Có lời mở đầu chào người nghe
+- Trình bày các tin tức chính theo thứ tự quan trọng
+- Văn phong thân thiện, dễ hiểu
+- Có kết luận ngắn gọn
+- Khoảng 3-5 phút đọc
+
+Chỉ trả về JSON hợp lệ:
+{{"title": "tiêu đề ngắn gọn bằng {lang_name}", "summary": "tóm tắt 3-5 câu bằng tiếng Việt", "script_vi": "script tiếng Việt đầy đủ", "script": "script bằng {lang_name} đầy đủ"}}
+
+CÁC BÀI BÁO:
+{articles_text[:12000]}"""
+        else:
+            prompt = f"""Bạn là AI chuyên tổng hợp tin tức và tạo podcast.
+Nhiệm vụ:
+- Đọc {len(crawled_articles)} bài báo về chủ đề "{request.topic}"
+- Tóm tắt các ý chính, không lặp ý
+- Tạo script podcast tự nhiên, dễ nghe, khoảng 3-5 phút đọc
+
+Yêu cầu script:
+- Có lời mở đầu chào người nghe
+- Trình bày các tin tức chính theo thứ tự quan trọng
+- Văn phong thân thiện, dễ hiểu
+- Có kết luận ngắn gọn
+
+Chỉ trả về JSON hợp lệ:
+{{"title": "tiêu đề podcast ngắn gọn", "summary": "tóm tắt 3-5 câu", "script": "toàn bộ script podcast"}}
+
+CÁC BÀI BÁO:
+{articles_text[:12000]}"""
+
+        try:
+            ai_res = await client.post(
+                f"{ai_url}/generate",
+                json={
+                    "prompt": prompt,
+                    "system_instruction": "Chỉ trả về JSON hợp lệ, không markdown, không giải thích thêm.",
+                    "provider": "claude",
+                },
+            )
+            ai_res.raise_for_status()
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=503, detail=f"[AI] Không kết nối được ai-service: {e}")
+
+        import json as _json, re as _re
+        ai_content = ai_res.json().get("content", "")
+        try:
+            ai_data = _json.loads(ai_content)
+        except Exception:
+            m = _re.search(r'\{[\s\S]*\}', ai_content)
+            if not m:
+                raise HTTPException(status_code=502, detail="AI không trả về JSON hợp lệ")
+            ai_data = _json.loads(m.group())
+
+        title    = ai_data.get("title", f"Podcast: {request.topic}")
+        summary  = ai_data.get("summary", "")
+        script   = ai_data.get("script", "")
+        script_vi = ai_data.get("script_vi", script)  # fallback về script nếu không có bản VI riêng
+
+        if not script:
+            raise HTTPException(status_code=422, detail="AI không tạo được script")
+
+        logger.info(f"[AI] Generated script ({len(script)} chars)")
+
+        # ── STEP 4: TTS ───────────────────────────────────────────────
+        voice = _resolve_voice(request.language, request.voice)
+        tts_text = _prepare_tts_text(script)
+
+        try:
+            tts_res = await client.post(
+                f"{TTS_SERVICE_URL}/tts",
+                json={"text": tts_text, "language": request.language, "voice": voice},
+            )
+            tts_res.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=502, detail=f"[TTS] {_extract_detail(e.response)}")
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=503, detail=f"[TTS] Không kết nối được tts-service: {e}")
+
+        audio_url = tts_res.json().get("audio_url", "")
+        if not audio_url:
+            raise HTTPException(status_code=502, detail="TTS không trả về audio_url")
+
+        logger.info(f"[TTS] Audio: {audio_url}")
+
+        return NewsPodcastResponse(
+            status="success",
+            topic=request.topic,
+            title=title,
+            summary=summary,
+            script=script,
+            script_vi=script_vi,
+            audio_url=audio_url,
+            articles=[{"title": a["title"], "url": a["url"], "source": a["source"]} for a in crawled_articles],
+            source="claude",
+        )
 
 
 @app.get("/download/{filename}")
