@@ -54,16 +54,37 @@ class ClaudeProvider(BaseAIProvider):
             )
             response.raise_for_status()
             data = response.json()
+            logger.info(f"Claude raw response keys: {list(data.keys())}, content type: {type(data.get('content'))}")
             
             # Extract content from Claude's response format
             content = data.get("content", [])
+            # Proxy có thể trả về string trực tiếp thay vì array
+            if isinstance(content, str):
+                if content:
+                    logger.info("Claude API call successful (string content)")
+                    return content
+                else:
+                    logger.error(f"Claude returned empty string content. Full response: {data}")
+                    raise Exception(f"Claude returned empty content. Response: {data}")
             if content and len(content) > 0:
-                text_content = content[0].get("text", "")
-                logger.info("Claude API call successful")
+                # Claude có thể trả về nhiều blocks: thinking, text, ...
+                # Cần lấy đúng block có type == "text"
+                text_content = ""
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        text_content = block.get("text", "")
+                        break
+                if not text_content:
+                    # Fallback: lấy block đầu tiên có key "text"
+                    for block in content:
+                        if isinstance(block, dict) and "text" in block:
+                            text_content = block["text"]
+                            break
+                logger.info(f"Claude API call successful, text length={len(text_content)}")
                 return text_content
             
             logger.error(f"Unexpected Claude response format: {data}")
-            raise Exception("Invalid response format from Claude")
+            raise Exception(f"Invalid response format from Claude: {data}")
             
         except requests.exceptions.Timeout:
             logger.error(f"Claude API timeout after {self.timeout}s")

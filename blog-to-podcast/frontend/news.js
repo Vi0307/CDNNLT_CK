@@ -208,6 +208,60 @@
 
     chatSendBtn.addEventListener("click", sendChat);
     chatInput.addEventListener("keypress", e => { if (e.key === "Enter") sendChat(); });
+
+    // buildContext: cắt thông minh theo từ khóa câu hỏi
+    function buildContext(text, question) {
+        if (!text) return "";
+        const MAX_TOTAL   = 4500;
+        const HEAD_SIZE   = 500;
+        const KEYWORD_MAX = 2000;
+        const TAIL_SIZE   = 300;
+        const STOPWORDS = new Set(["la","va","co","khong","cua","trong","ve","de","cho",
+            "voi","cac","mot","nhung","nay","do","duoc","tu","theo","khi","hay","hoac",
+            "thi","ma","nen","vi","do","boi","tai","ra","vao","len","xuong","da","se",
+            "dang","rat","cung","con","day","kia","nhu","hon","nhat","bao","nhieu",
+            "là","và","có","không","của","trong","về","để","cho","với","các","một",
+            "những","này","đó","được","từ","theo","khi","hay","hoặc","thì","mà",
+            "nên","vì","bởi","tại","ra","vào","lên","xuống","đã","sẽ","đang","rất",
+            "cũng","còn","đây","kia","như","hơn","nhất"]);
+
+        const keywords = question.toLowerCase()
+            .replace(/[?!.,;:]/g, " ")
+            .split(/\s+/)
+            .filter(w => w.length > 1 && !STOPWORDS.has(w));
+
+        if (keywords.length === 0) {
+            if (text.length <= MAX_TOTAL) return text;
+            return text.slice(0, 2000) + "\n...\n" + text.slice(-1000);
+        }
+
+        const paragraphs = text.split(/\n\n|\n/).filter(p => p.trim().length > 0);
+        const head = text.slice(0, HEAD_SIZE);
+        const tail = text.length > HEAD_SIZE + TAIL_SIZE ? text.slice(-TAIL_SIZE) : "";
+
+        const matchedParagraphs = [];
+        let keywordChars = 0;
+        for (const para of paragraphs) {
+            const lower = para.toLowerCase();
+            const hasKeyword = keywords.some(kw => lower.includes(kw));
+            if (hasKeyword && keywordChars < KEYWORD_MAX) {
+                matchedParagraphs.push(para);
+                keywordChars += para.length;
+            }
+        }
+
+        const parts = [head];
+        if (matchedParagraphs.length > 0) {
+            const kSection = matchedParagraphs.join("\n");
+            if (!head.includes(kSection.slice(0, 50))) parts.push(kSection);
+        }
+        if (tail && !head.includes(tail.slice(0, 50))) parts.push(tail);
+
+        let result = parts.join("\n...\n");
+        if (result.length > MAX_TOTAL) result = result.slice(0, MAX_TOTAL);
+        return result;
+    }
+
     async function sendChat() {
         const text = chatInput.value.trim();
         if (!text || !currentContext) return;
@@ -217,7 +271,7 @@
         try {
             const res = await fetch(GATEWAY + "/chat", {
                 method:"POST", headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({question:text, context:currentContext, language:langSelect.value})
+                body: JSON.stringify({question:text, context:buildContext(currentContext, text), language:langSelect.value})
             });
             const data = await res.json();
             document.getElementById(loadId)?.remove();

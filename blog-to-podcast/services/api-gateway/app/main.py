@@ -51,6 +51,7 @@ class ConvertResponse(BaseModel):
     original_script: str = ""
     script: str = ""
     source: str
+    raw_text: str = ""   # nội dung bài báo gốc để dùng cho Q&A
 
 
 class LibraryPodcast(BaseModel):
@@ -171,6 +172,7 @@ async def convert(request: ConvertRequest):
             original_script=original_script,
             script=script,
             source=source,
+            raw_text=raw_text,
         )
 
 
@@ -211,10 +213,12 @@ CONTEXT: {request.context[:3000]}"""
             content = res.json().get("content", "")
             # Parse JSON từ response
             import json, re as _re
+            content_c = _re.sub(r'^```(?:json)?\s*', '', content.strip())
+            content_c = _re.sub(r'\s*```$', '', content_c.strip())
             try:
-                data = json.loads(content)
+                data = json.loads(content_c)
             except Exception:
-                m = _re.search(r'\{[\s\S]*\}', content)
+                m = _re.search(r'\{[\s\S]*\}', content_c)
                 if not m:
                     raise HTTPException(status_code=502, detail="Không parse được JSON từ AI")
                 data = json.loads(m.group())
@@ -235,29 +239,68 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 async def chat_qa(request: ChatRequest):
-    """Trả lời câu hỏi dựa trên nội dung bài viết."""
-    prompt = f"""Bạn là AI trả lời câu hỏi dựa trên nội dung bài viết.
-Nhiệm vụ:
-- Nhận câu hỏi từ người dùng
-- Đọc nội dung bài viết (context)
-- Trả lời chính xác dựa trên nội dung
-- Trích dẫn đoạn liên quan từ bài
-BẮT BUỘC:
-- Chỉ trả về JSON hợp lệ
-- Không thêm text ngoài JSON
-- Không tự bịa thông tin ngoài context
-FORMAT:
-{{"answer": "câu trả lời","source": "đoạn trích","confidence": "high | medium | low"}}
-QUY TẮC:
-1. TRẢ LỜI: Ngắn gọn, dễ hiểu, dựa hoàn toàn vào context, không suy đoán ngoài bài
-2. SOURCE: Trích nguyên văn 1–2 câu từ context liên quan nhất, không chỉnh sửa
-3. CONFIDENCE: high → thông tin rõ ràng | medium → suy luận nhẹ | low → không chắc
-4. Nếu không tìm thấy: {{"answer": "Không tìm thấy thông tin trong bài viết","source": "","confidence": "low"}}
-5. Trả lời bằng tiếng Việt
-INPUT:
+    """Trả lời câu hỏi dựa trên nội dung bài viết, có fallback kiến thức AI."""
+    import json as _json, re as _re
+
+    GOOGLE_SEARCH_KEY = os.getenv("GOOGLE_SEARCH_KEY", "")
+    GOOGLE_SEARCH_CX  = os.getenv("GOOGLE_SEARCH_CX", "")
+
+    # ── TẦNG 2 (tùy chọn): Google Search nếu có API key ──────────────
+    web_section = ""
+    if GOOGLE_SEARCH_KEY and GOOGLE_SEARCH_CX:
+        try:
+            search_timeout = httpx.Timeout(8.0, connect=4.0)
+            async with httpx.AsyncClient(timeout=search_timeout) as search_client:
+                search_res = await search_client.get(
+                    "https://www.googleapis.com/customsearch/v1",
+                    params={
+                        "key": GOOGLE_SEARCH_KEY,
+                        "cx":  GOOGLE_SEARCH_CX,
+                        "q":   request.question,
+                        "num": 3,
+                        "lr":  "lang_vi",
+                    },
+                )
+                if search_res.status_code == 200:
+                    items = search_res.json().get("items", [])
+                    snippets = [
+                        f"- {item.get('title','')}: {item.get('snippet','')}"
+                        for item in items if item.get("snippet")
+                    ]
+                    if snippets:
+                        web_section = (
+                            "\n\nWEB SEARCH RESULTS (thông tin bổ sung từ web):\n"
+                            + "\n".join(snippets)
+                            + "\nƯu tiên dùng CONTEXT bài viết. Dùng web results để bổ sung khi context thiếu."
+                        )
+        except Exception as e:
+            logger.warning(f"[CHAT] Google Search failed (ignored): {e}")
+
+    # ── TẦNG 1: Prompt chính ─────────────────────────────────────────
+    prompt = f"""Bạn là AI trợ lý phân tích bài báo.
+
+CONTEXT (nội dung bài viết):
+{request.context}
+
 QUESTION: {request.question}
-CONTEXT:
-{request.context[:4000]}"""
+{web_section}
+
+Hướng dẫn trả lời:
+- Nếu câu hỏi có thể trả lời từ context → trả lời chi tiết, trích dẫn phần liên quan.
+- Nếu context KHÔNG có đủ thông tin → ĐỪNG bịa. Thay vào đó:
+  1. Trả lời phần nào có trong context (nếu có liên quan một phần).
+  2. Nói rõ: "Bài viết không đề cập chi tiết về [X]. Dưới đây là thông tin chung tôi biết về chủ đề này:"
+  3. Dùng kiến thức của bạn để bổ sung thông tin liên quan.
+- Luôn trả lời bằng tiếng Việt, rõ ràng và hữu ích.
+- Cuối câu trả lời thêm 1 dòng: NGUỒN: [Từ bài viết] hoặc [Từ bài viết + kiến thức AI] hoặc [Kiến thức AI]
+
+Chỉ trả về JSON hợp lệ:
+{{"answer": "câu trả lời đầy đủ (bao gồm dòng NGUỒN ở cuối)", "source": "đoạn trích nguyên văn từ context nếu có, để trống nếu không có", "confidence": "high | medium | low"}}
+
+Quy tắc confidence:
+- high → thông tin rõ ràng trong bài viết
+- medium → kết hợp bài viết + kiến thức AI / web
+- low → chủ yếu từ kiến thức AI, bài không đề cập"""
 
     timeout = httpx.Timeout(60.0, connect=10.0)
     ai_url = PROCESS_SERVICE_URL.replace(":8002", ":8004").replace("process-service", "ai-service")
@@ -265,15 +308,20 @@ CONTEXT:
         try:
             res = await client.post(
                 f"{ai_url}/generate",
-                json={"prompt": prompt, "system_instruction": "Chỉ trả về JSON hợp lệ, không markdown, không giải thích thêm.", "provider": "claude"},
+                json={
+                    "prompt": prompt,
+                    "system_instruction": "Chỉ trả về JSON hợp lệ, không markdown, không giải thích thêm.",
+                    "provider": "claude",
+                },
             )
             res.raise_for_status()
             content = res.json().get("content", "")
-            import json as _json, re as _re
+            content_c = _re.sub(r'^```(?:json)?\s*', '', content.strip())
+            content_c = _re.sub(r'\s*```$', '', content_c.strip())
             try:
-                data = _json.loads(content)
+                data = _json.loads(content_c)
             except Exception:
-                m = _re.search(r'\{[\s\S]*\}', content)
+                m = _re.search(r'\{[\s\S]*\}', content_c)
                 if not m:
                     raise HTTPException(status_code=502, detail="Không parse được JSON từ AI")
                 data = _json.loads(m.group())
@@ -440,24 +488,31 @@ CÁC BÀI BÁO:
             raise HTTPException(status_code=503, detail=f"[AI] Không kết nối được ai-service: {e}")
 
         import json as _json, re as _re
-        ai_content = ai_res.json().get("content", "")
+        ai_raw = ai_res.json()
+        ai_content = ai_raw.get("content", "")
+        logger.info(f"[AI] Full response keys: {list(ai_raw.keys())}, content length={len(ai_content)}, preview={ai_content[:300]}")
+        # Bỏ markdown code block nếu có (```json ... ```)
+        ai_content_clean = _re.sub(r'^```(?:json)?\s*', '', ai_content.strip())
+        ai_content_clean = _re.sub(r'\s*```$', '', ai_content_clean.strip())
         try:
-            ai_data = _json.loads(ai_content)
+            ai_data = _json.loads(ai_content_clean)
         except Exception:
-            m = _re.search(r'\{[\s\S]*\}', ai_content)
+            m = _re.search(r'\{[\s\S]*\}', ai_content_clean)
             if not m:
+                logger.error(f"[AI] Cannot parse JSON. Full content: {ai_content[:500]}")
                 raise HTTPException(status_code=502, detail="AI không trả về JSON hợp lệ")
             ai_data = _json.loads(m.group())
 
         title    = ai_data.get("title", f"Podcast: {request.topic}")
         summary  = ai_data.get("summary", "")
         script   = ai_data.get("script", "")
-        script_vi = ai_data.get("script_vi", script)  # fallback về script nếu không có bản VI riêng
+        script_vi = ai_data.get("script_vi", script)
 
         if not script:
+            logger.error(f"[AI] No script in response. Keys: {list(ai_data.keys())}")
             raise HTTPException(status_code=422, detail="AI không tạo được script")
 
-        logger.info(f"[AI] Generated script ({len(script)} chars)")
+        logger.info(f"[AI] Generated script ({len(script)} chars), calling TTS...")
 
         # ── STEP 4: TTS ───────────────────────────────────────────────
         voice = _resolve_voice(request.language, request.voice)
