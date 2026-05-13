@@ -12,6 +12,7 @@ class ArticleItem(BaseModel):
 
 class NewsSearchRequest(BaseModel):
     topic: str
+    keywords: Optional[List[str]] = None
     limit: int = 5
 
 

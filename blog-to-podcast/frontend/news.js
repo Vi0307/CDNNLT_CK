@@ -42,10 +42,46 @@
 
     const steps = [1,2,3,4].map(i => document.getElementById("step-" + i));
 
+    // Parse preview elements
+    const parsePreview   = document.getElementById("parse-preview");
+    const parseLoading   = document.getElementById("parse-loading");
+    const parseOk        = document.getElementById("parse-ok");
+    const parseText      = document.getElementById("parse-text");
+    const parseKeywords  = document.getElementById("parse-keywords");
+    const parseReject    = document.getElementById("parse-reject");
+    const parseRejectMsg = document.getElementById("parse-reject-msg");
+
     let currentScript   = "";
     let currentScriptVi = "";
     let currentContext  = "";
     let currentTopic    = "";
+    let parsedResult    = null;   // kết quả từ /parse-news-query
+    let parseTimer      = null;
+
+    // Realtime detection (client-side, không cần AI)
+    const REALTIME_MAP = {
+        "gold":          ["giá vàng","vàng sjc","vàng 9999","gia vang","vang sjc"],
+        "exchange_rate": ["tỷ giá","giá usd","đô la","ngoại tệ","ty gia","usd","eur vnd","tỉ giá"],
+        "fuel":          ["giá xăng","giá dầu","xăng dầu","gia xang","xang dau","petrolimex"],
+        "weather":       ["thời tiết","nhiệt độ","dự báo","thoi tiet","mua nang","nắng mưa"],
+    };
+
+    function detectRealtime(query) {
+        const q = query.toLowerCase();
+        for (const [rtype, keywords] of Object.entries(REALTIME_MAP)) {
+            if (keywords.some(kw => q.includes(kw))) return rtype;
+        }
+        return null;
+    }
+
+    // Category → topic mapping cho news-service
+    const categoryToTopic = {
+        "chinh-tri":"chính trị","giao-duc":"giáo dục","cong-nghe":"công nghệ",
+        "y-te":"y tế","kinh-te":"kinh tế","the-thao":"thể thao","giai-tri":"giải trí",
+        "the-gioi":"thế giới","phap-luat":"pháp luật","moi-truong":"môi trường",
+        "bat-dong-san":"bất động sản","tai-chinh":"tài chính","xa-hoi":"xã hội",
+        "khoa-hoc":"khoa học","other":"default"
+    };
 
     const voiceMap = {
         vi: [{value:"vi-VN-Neural2-A",label:"Giong Nu (Mien Nam)"},{value:"vi-VN-Neural2-D",label:"Giong Nam (Mien Bac)"}],
@@ -65,8 +101,70 @@
             document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
             chip.classList.add("active");
             topicInput.value = chip.dataset.topic;
+            triggerParse(chip.dataset.topic);
         });
     });
+
+    // Debounce parse khi gõ
+    topicInput.addEventListener("input", () => {
+        clearTimeout(parseTimer);
+        parsedResult = null;
+        const q = topicInput.value.trim();
+        if (!q) { parsePreview.style.display = "none"; return; }
+        parseTimer = setTimeout(() => triggerParse(q), 900);
+    });
+
+    async function triggerParse(query) {
+        // Detect realtime ngay lập tức (không cần AI)
+        const rtType = detectRealtime(query);
+        if (rtType) {
+            const rtLabels = {
+                "gold": "📊 Giá vàng (dữ liệu thực)",
+                "exchange_rate": "💱 Tỷ giá ngoại tệ (dữ liệu thực)",
+                "fuel": "⛽ Giá xăng dầu (dữ liệu thực)",
+                "weather": "🌤️ Thời tiết (dữ liệu thực)",
+            };
+            parsePreview.style.display = "block";
+            parseLoading.style.display = "none";
+            parseReject.style.display  = "none";
+            parseText.textContent = rtLabels[rtType] || rtType;
+            parseKeywords.innerHTML = "<span style='background:rgba(74,222,128,.15);color:#4ade80;padding:2px 9px;border-radius:8px;font-size:.78rem;font-weight:600;'>Real-time data</span>";
+            parseOk.style.display = "block";
+            parsedResult = { is_valid_news_topic: true, search_keywords: [], category: "other", realtime_type: rtType };
+            return;
+        }
+
+        parsePreview.style.display = "block";
+        parseLoading.style.display = "block";
+        parseOk.style.display = "none";
+        parseReject.style.display = "none";
+        try {
+            const res = await fetch(GATEWAY + "/parse-news-query", {
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({query})
+            });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            parseLoading.style.display = "none";
+            if (!data.is_valid_news_topic) {
+                parseReject.style.display = "block";
+                parseRejectMsg.textContent = data.rejection_reason || "Không phải chủ đề tin tức.";
+                parsedResult = null;
+            } else {
+                parsedResult = data;
+                const catLabel = categoryToTopic[data.category] || data.category;
+                parseText.textContent = "Chủ đề: " + catLabel;
+                parseKeywords.innerHTML = (data.search_keywords || [])
+                    .map(k => "<span style='background:rgba(139,92,246,.18);color:#c4b5fd;padding:2px 9px;border-radius:8px;font-size:.78rem;font-weight:600;'>" + k + "</span>")
+                    .join("");
+                parseOk.style.display = "block";
+            }
+        } catch {
+            parseLoading.style.display = "none";
+            parsePreview.style.display = "none";
+        }
+    }
 
     scriptToggle.addEventListener("click", () => {
         const hidden = scriptBox.style.display === "none";
@@ -84,31 +182,77 @@
     });
 
     generateBtn.addEventListener("click", async () => {
-        const topic = topicInput.value.trim();
-        if (!topic) { showError("Vui long nhap chu de tin tuc!"); return; }
+        const query = topicInput.value.trim();
+        if (!query) { showError("Vui lòng nhập chủ đề tin tức!"); return; }
+
+        // Nếu parse xác định không hợp lệ → chặn
+        if (parsedResult !== null && parsedResult.is_valid_news_topic === false) {
+            showError(parsedResult.rejection_reason || "Không phải chủ đề tin tức.");
+            return;
+        }
+
+        // Nếu chưa parse → parse ngay trước khi generate
+        if (!parsedResult) {
+            try {
+                const res = await fetch(GATEWAY + "/parse-news-query", {
+                    method: "POST", headers: {"Content-Type":"application/json"},
+                    body: JSON.stringify({query})
+                });
+                if (res.ok) {
+                    const d = await res.json();
+                    if (!d.is_valid_news_topic) {
+                        showError(d.rejection_reason || "Không phải chủ đề tin tức.");
+                        return;
+                    }
+                    parsedResult = d;
+                }
+            } catch {}
+        }
+
+        const topic    = parsedResult ? (categoryToTopic[parsedResult.category] || query) : query;
+        const keywords = parsedResult ? (parsedResult.search_keywords || []) : [];
+        // Detect realtime client-side (nhanh hơn, không tốn API key)
+        const rtType   = detectRealtime(query);
         currentTopic = topic;
         startUI();
 
         const timers = [
-            setTimeout(() => { setStep(0,"active","Dang tim bai bao..."); }, 100),
-            setTimeout(() => { setStep(0,"done","Hoan tat"); setStep(1,"active","Dang crawl noi dung..."); }, 4500),
-            setTimeout(() => { setStep(1,"done","Hoan tat"); setStep(2,"active","AI dang tong hop..."); }, 13000),
-            setTimeout(() => { setStep(2,"done","Hoan tat"); setStep(3,"active","Dang tao audio..."); }, 35000),
+            setTimeout(() => { setStep(0,"active", rtType ? "Đang lấy dữ liệu thực..." : "Đang tìm bài báo..."); }, 100),
+            setTimeout(() => { setStep(0,"done","Hoàn tất"); setStep(1,"active","Đang crawl nội dung..."); }, 4500),
+            setTimeout(() => { setStep(1,"done","Hoàn tất"); setStep(2,"active","AI đang tổng hợp..."); }, 13000),
+            setTimeout(() => { setStep(2,"done","Hoàn tất"); setStep(3,"active","Đang tạo audio..."); }, 35000),
         ];
 
         try {
-            const res = await fetch(GATEWAY + "/generate-news-podcast", {
-                method: "POST",
-                headers: {"Content-Type":"application/json"},
-                body: JSON.stringify({topic, language:langSelect.value, voice:voiceSelect.value, max_articles:5})
-            });
+            let res, data;
+            if (rtType) {
+                // Real-time pipeline
+                res = await fetch(GATEWAY + "/realtime-podcast", {
+                    method: "POST",
+                    headers: {"Content-Type":"application/json"},
+                    body: JSON.stringify({query, rtype: rtType, language:langSelect.value, voice:voiceSelect.value})
+                });
+            } else {
+                // News RSS pipeline
+                res = await fetch(GATEWAY + "/generate-news-podcast", {
+                    method: "POST",
+                    headers: {"Content-Type":"application/json"},
+                    body: JSON.stringify({topic, keywords, language:langSelect.value, voice:voiceSelect.value, max_articles:5})
+                });
+            }
             timers.forEach(t => clearTimeout(t));
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                throw new Error(err.detail || "Loi " + res.status);
+                throw new Error(err.detail || "Lỗi " + res.status);
             }
-            const data = await res.json();
-            steps.forEach(s => { s.className = "step done"; s.querySelector(".status-text").textContent = "Hoan tat"; });
+            data = await res.json();
+            // Normalize realtime response để dùng chung showResult
+            if (rtType && !data.topic) {
+                data.topic   = query;
+                data.summary = data.raw_data || "";
+                data.articles = [];
+            }
+            steps.forEach(s => { s.className = "step done"; s.querySelector(".status-text").textContent = "Hoàn tất"; });
             showResult(data);
         } catch(err) {
             timers.forEach(t => clearTimeout(t));
@@ -193,6 +337,8 @@
         resultContainer.classList.add("hidden");
         audioPlayer.pause(); audioPlayer.src = "";
         currentScript = currentScriptVi = currentContext = "";
+        parsedResult = null;
+        parsePreview.style.display = "none";
     }
     function setStep(idx, status, msg) {
         if (!steps[idx]) return;
