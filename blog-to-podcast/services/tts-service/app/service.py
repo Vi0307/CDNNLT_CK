@@ -79,13 +79,27 @@ async def generate_audio_file(text: str, language: str, voice: str = None) -> tu
                         if not chunk_text.strip():
                             continue
                         print(f"DEBUG: Processing chunk {i+1}/{len(chunks)}...")
-                        communicate = edge_tts.Communicate(chunk_text, edge_voice)
-                        # Dùng timeout cho từng chunk phòng khi mất kết nối mạng
-                        async def process_chunk():
-                            async for chunk in communicate.stream():
-                                if chunk["type"] == "audio":
-                                    f.write(chunk["data"])
-                        await asyncio.wait_for(process_chunk(), timeout=120.0)
+                        max_retries = 3
+                        for attempt in range(max_retries):
+                            try:
+                                communicate = edge_tts.Communicate(chunk_text, edge_voice)
+                                async def process_chunk():
+                                    async for chunk in communicate.stream():
+                                        if chunk["type"] == "audio":
+                                            f.write(chunk["data"])
+                                await asyncio.wait_for(process_chunk(), timeout=120.0)
+                                break  # Success!
+                            except asyncio.TimeoutError:
+                                if attempt == max_retries - 1: raise
+                                print(f"DEBUG: Chunk timeout, retrying {attempt+1}...")
+                                await asyncio.sleep(1)
+                            except Exception as e:
+                                if "No audio" in str(e) or "NoAudioReceived" in str(type(e).__name__):
+                                    if attempt == max_retries - 1: raise
+                                    print(f"DEBUG: NoAudioReceived, retrying {attempt+1}...")
+                                    await asyncio.sleep(1.5)
+                                else:
+                                    raise
                 print(f"DEBUG: edge-tts save complete. Saved to {filepath}")
             except asyncio.TimeoutError:
                 print("DEBUG: edge-tts SKIPPED (Timeout during chunking)")

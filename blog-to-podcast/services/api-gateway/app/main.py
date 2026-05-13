@@ -349,10 +349,185 @@ async def news_search(request: NewsSearchRequest):
             raise HTTPException(status_code=503, detail=f"Không kết nối được news-service: {e}")
 
 
+
+# ---------- Realtime Podcast ----------
+
+class RealtimePodcastRequest(BaseModel):
+    query: str
+    rtype: str
+    language: str = "vi"
+    voice: Optional[str] = None
+
+
+@app.post("/realtime-podcast")
+async def realtime_podcast(request: RealtimePodcastRequest):
+    """Pipeline real-time: Lấy dữ liệu thực → AI script → TTS → Audio"""
+    timeout = httpx.Timeout(60.0, connect=10.0)
+    ai_url  = PROCESS_SERVICE_URL.replace(":8002", ":8004").replace("process-service", "ai-service")
+    import json as _json, re as _re
+
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        # STEP 1: Lấy dữ liệu real-time
+        try:
+            rt_res = await client.post(
+                f"{NEWS_SERVICE_URL}/realtime",
+                json={"query": request.query, "rtype": request.rtype},
+            )
+            rt_res.raise_for_status()
+        except Exception as e:
+            raise HTTPException(status_code=503, detail=f"[Realtime] {e}")
+
+        rt_data = rt_res.json()
+        rt_text = rt_data.get("text", "")
+        source  = rt_data.get("source", "")
+        if not rt_text:
+            raise HTTPException(status_code=422, detail=f"Dữ liệu trống từ {source}")
+
+        # STEP 2: AI tổng hợp script
+        type_labels = {"gold":"giá vàng","exchange_rate":"tỷ giá ngoại tệ","fuel":"giá xăng dầu","weather":"thời tiết"}
+        label = type_labels.get(request.rtype, request.rtype)
+        prompt = f"""Bạn là MC podcast chuyên đọc bản tin tài chính và thời tiết.
+Dữ liệu thực tế vừa lấy về:
+{rt_text}
+
+Tạo script podcast ngắn gọn (1-2 phút) về {label}.
+Yêu cầu: mở đầu chào người nghe, đọc số liệu rõ ràng, thêm nhận xét ngắn, kết thúc tự nhiên.
+Chỉ trả về JSON: {{"title": "tiêu đề ngắn", "script": "toàn bộ script"}}"""
+
+        try:
+            ai_res = await client.post(
+                f"{ai_url}/generate",
+                json={"prompt": prompt, "system_instruction": "Chỉ trả về JSON hợp lệ.", "provider": "claude"},
+            )
+            ai_res.raise_for_status()
+            content = ai_res.json().get("content", "")
+            content_c = _re.sub(r'^```(?:json)?\s*', '', content.strip())
+            content_c = _re.sub(r'\s*```$', '', content_c.strip())
+            try:
+                ai_data = _json.loads(content_c)
+            except Exception:
+                m = _re.search(r'\{[\s\S]*\}', content_c)
+                ai_data = _json.loads(m.group()) if m else {"title": label, "script": content_c}
+        except Exception as e:
+            logger.warning(f"[AI] Realtime fallback triggered due to error: {e}")
+            ai_data = {
+                "title": f"Bản tin {label} (Dữ liệu thô)",
+                "script": f"Chào bạn, đây là bản tin nhanh về {label}. Hiện tại hệ thống tổng hợp AI đang bị gián đoạn, nền tảng sẽ tự động đọc thẳng dữ liệu thô. Chúc quý vị một ngày tốt lành nhé. Chi tiết như sau:\n\n{rt_text}"
+            }
+
+        title  = ai_data.get("title", f"Bản tin {label}")
+        script = ai_data.get("script", "")
+        if not script:
+            raise HTTPException(status_code=422, detail="AI không tạo được script")
+
+        # STEP 3: TTS
+        voice    = _resolve_voice(request.language, request.voice)
+        tts_text = _prepare_tts_text(script)
+        try:
+            tts_res = await client.post(
+                f"{TTS_SERVICE_URL}/tts",
+                json={"text": tts_text, "language": request.language, "voice": voice},
+            )
+            tts_res.raise_for_status()
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"[TTS] {e}")
+
+        audio_url = tts_res.json().get("audio_url", "")
+        if not audio_url:
+            raise HTTPException(status_code=502, detail="TTS không trả về audio_url")
+
+        return {
+            "status": "success", "rtype": request.rtype,
+            "title": title, "script": script,
+            "raw_data": rt_text, "audio_url": audio_url, "source": source,
+        }
+
+
+# ---------- Parse News Query ----------
+
+class ParseQueryRequest(BaseModel):
+    query: str
+
+
+@app.post("/parse-news-query")
+async def parse_news_query(request: ParseQueryRequest):
+    """Phân tích ý định tìm kiếm tin tức từ câu nhập tự do."""
+    import json as _json, re as _re
+
+    prompt = f"""# Vai trò
+Bạn là một trình phân tích ý định tìm kiếm tin tức.
+Người dùng nhập một câu hoặc từ khoá bất kỳ bằng tiếng Việt.
+Nhiệm vụ của bạn là trích xuất thông tin tìm kiếm có cấu trúc.
+
+# Quy tắc bắt buộc
+1. Chỉ trả về JSON, không thêm bất kỳ văn bản nào khác.
+2. Không bịa ra thông tin nếu không có trong input.
+3. search_keywords phải là mảng tối đa 3 phần tử, ngắn gọn.
+4. category chỉ được chọn trong danh sách cho phép.
+5. time_range mặc định là "24h" nếu không có chỉ định thời gian.
+
+# Danh sách category cho phép
+chinh-tri | giao-duc | cong-nghe | y-te | kinh-te |
+the-thao | giai-tri | the-gioi | phap-luat | moi-truong |
+bat-dong-san | tai-chinh | xa-hoi | khoa-hoc | other
+
+# Output schema
+{{"search_keywords": ["keyword1", "keyword2"], "category": "kinh-te", "time_range": "24h", "language": "vi", "is_valid_news_topic": true, "rejection_reason": null}}
+
+# Giá trị time_range hợp lệ
+"1h" | "6h" | "24h" | "3d" | "7d" | "30d"
+
+# Khi nào đặt is_valid_news_topic = false
+- Input không liên quan đến tin tức (ví dụ: "xin chào", "1+1=?")
+- Input là câu hỏi cá nhân ("tôi bị đau bụng phải làm gì")
+- Input là yêu cầu hành động ("viết code cho tôi")
+Khi false, điền rejection_reason bằng tiếng Việt để hiển thị cho user.
+
+INPUT: {request.query}"""
+
+    ai_url = PROCESS_SERVICE_URL.replace(":8002", ":8004").replace("process-service", "ai-service")
+    timeout = httpx.Timeout(20.0, connect=5.0)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        try:
+            res = await client.post(
+                f"{ai_url}/generate",
+                json={"prompt": prompt, "system_instruction": "Chỉ trả về JSON hợp lệ.", "provider": "claude"},
+            )
+            res.raise_for_status()
+            content = res.json().get("content", "")
+            content_c = _re.sub(r'^```(?:json)?\s*', '', content.strip())
+            content_c = _re.sub(r'\s*```$', '', content_c.strip())
+            try:
+                data = _json.loads(content_c)
+            except Exception:
+                m = _re.search(r'\{[\s\S]*?\}', content_c)
+                data = _json.loads(m.group()) if m else {
+                    "search_keywords": [request.query],
+                    "category": "other",
+                    "time_range": "24h",
+                    "language": "vi",
+                    "is_valid_news_topic": True,
+                    "rejection_reason": None
+                }
+            return data
+        except Exception as e:
+            logger.warning(f"[PARSE] AI unavailable, using fallback: {e}")
+            # Fallback nếu AI không khả dụng
+            return {
+                "search_keywords": [request.query],
+                "category": "other",
+                "time_range": "24h",
+                "language": "vi",
+                "is_valid_news_topic": True,
+                "rejection_reason": None
+            }
+
+
 # ---------- Generate News Podcast ----------
 
 class NewsPodcastRequest(BaseModel):
     topic: str
+    keywords: Optional[list] = None   # từ parse-news-query
     language: str = "vi"
     voice: Optional[str] = None
     max_articles: int = 5
@@ -385,7 +560,7 @@ async def generate_news_podcast(request: NewsPodcastRequest):
         try:
             news_res = await client.post(
                 f"{NEWS_SERVICE_URL}/news/search",
-                json={"topic": request.topic, "limit": request.max_articles},
+                json={"topic": request.topic, "limit": request.max_articles, "keywords": request.keywords or []},
             )
             news_res.raise_for_status()
         except httpx.RequestError as e:
@@ -628,7 +803,8 @@ def _prepare_tts_text(raw: str) -> str:
     import re
     normalized = re.sub(r"```[\s\S]*?```", " ", raw)
     normalized = re.sub(r"`[^`]*`", " ", normalized)
-    normalized = re.sub(r"[*_#>\-]", " ", normalized)
+    normalized = re.sub(r"<[^>]*>", " ", normalized)
+    normalized = re.sub(r"[*_#>\-&+%$@?!|{}[\]]", " ", normalized)
     normalized = re.sub(r"\s+", " ", normalized).strip()
     if not normalized:
         raise HTTPException(status_code=422, detail="Kịch bản AI rỗng, không thể tổng hợp âm thanh.")

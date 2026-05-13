@@ -90,6 +90,7 @@ services:
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
     volumes:
       - ./services/news-service/app:/app/app
 

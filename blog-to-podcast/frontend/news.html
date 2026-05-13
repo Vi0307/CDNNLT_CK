@@ -82,12 +82,30 @@
 
                 <!-- Form -->
                 <section class="card glass-effect form-section" id="form-container">
+
+                    <!-- Ô nhập tự do -->
                     <div class="input-group">
-                        <label for="topic-input">Chủ đề tin tức</label>
-                        <div class="input-field">
-                            <i class="fa-solid fa-newspaper icon-left"></i>
-                            <input type="text" id="topic-input" placeholder="Ví dụ: giáo dục, công nghệ, y tế..." autocomplete="off">
+                        <label for="topic-input">Bạn muốn nghe tin gì?</label>
+                        <div class="input-field" style="position:relative;">
+                            <i class="fa-solid fa-magnifying-glass icon-left"></i>
+                            <input type="text" id="topic-input"
+                                placeholder="Ví dụ: giá vàng hôm nay, AI mới nhất, bóng đá V-League..."
+                                autocomplete="off">
                             <div class="input-highlight"></div>
+                        </div>
+                    </div>
+
+                    <!-- AI parse preview -->
+                    <div id="parse-preview" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);border-radius:10px;font-size:.85rem;">
+                        <div id="parse-loading" style="display:none;color:#a78bfa;"><i class="fa-solid fa-spinner fa-spin"></i> AI đang phân tích...</div>
+                        <div id="parse-ok" style="display:none;">
+                            <span style="color:#4ade80;font-weight:600;"><i class="fa-solid fa-circle-check"></i> AI hiểu:</span>
+                            <span id="parse-text" style="color:#e2e8f0;margin-left:6px;"></span>
+                            <div id="parse-keywords" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;"></div>
+                        </div>
+                        <div id="parse-reject" style="display:none;color:#f87171;">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span id="parse-reject-msg" style="margin-left:6px;"></span>
                         </div>
                     </div>
 
