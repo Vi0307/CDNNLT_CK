@@ -10,5 +10,7 @@
         "**/audio_output/**",
         "**/.git/**",
         "**/node_modules/**"
-    ]
+    ],
+    "python.analysis.typeCheckingMode": "off",
+    "pyrefly.enable": false
 }

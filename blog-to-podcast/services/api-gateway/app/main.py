@@ -223,10 +223,15 @@ CONTEXT: {request.context[:3000]}"""
                     raise HTTPException(status_code=502, detail="Không parse được JSON từ AI")
                 data = json.loads(m.group())
             return data
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"Không kết nối được AI service: {e}")
-
-
+        except Exception as e:
+            logger.warning(f"[EXPLAIN] AI service failed, usando fallback: {e}")
+            return {
+                "type": "common",
+                "original": request.word,
+                "meaning": ("Hệ thống AI đang tạm thời gián đoạn "
+                            "nên không thể giải nghĩa cụm từ này lúc này. Vui lòng thử lại sau."),
+                "example": ""
+            }
 
 
 # ---------- Chat Q&A ----------
@@ -326,8 +331,14 @@ Quy tắc confidence:
                     raise HTTPException(status_code=502, detail="Không parse được JSON từ AI")
                 data = _json.loads(m.group())
             return data
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"Không kết nối được AI service: {e}")
+        except Exception as e:
+            logger.warning(f"[CHAT] AI service failed, usando fallback: {e}")
+            return {
+                "answer": ("Xin lỗi, hiện tại dịch vụ AI đang bị gián đoạn hoặc quá tải. "
+                           "Vui lòng thử lại sau nhé."),
+                "source": "",
+                "confidence": "low"
+            }
 
 
 # ---------- News Search (proxy to news-service) ----------
@@ -659,8 +670,8 @@ CÁC BÀI BÁO:
                 },
             )
             ai_res.raise_for_status()
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"[AI] Không kết nối được ai-service: {e}")
+        except Exception as e:
+            raise HTTPException(status_code=503, detail=f"[AI] Sự cố kết nối hoặc AI service lỗi: {e}")
 
         import json as _json, re as _re
         ai_raw = ai_res.json()

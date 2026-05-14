@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thư viện Podcast - Blog2Cast</title>
+    <title>ThÆ° viá»‡n Podcast - Blog2Cast</title>
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <!-- CSS -->
     <link rel="stylesheet" href="styles.css?v=4">
     <style>
@@ -173,11 +173,11 @@
             <nav class="nav-menu">
                 <a href="index.html" class="nav-item">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Tạo Podcast</span>
+                    <span>Táº¡o Podcast</span>
                 </a>
                 <a href="library.html" class="nav-item active">
                     <i class="fa-solid fa-book-bookmark"></i>
-                    <span>Thư viện</span>
+                    <span>ThÆ° viá»‡n</span>
                 </a>
             </nav>
         </aside>
@@ -187,8 +187,8 @@
             <main class="app-container" style="max-width: 1200px;">
                 <!-- Header -->
                 <header class="app-header">
-                    <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.5rem; margin-bottom: 10px;">Thư viện Podcast</h2>
-                    <p class="tagline">Quản lý và nghe lại các podcast đã lưu của bạn</p>
+                    <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.5rem; margin-bottom: 10px;">ThÆ° viá»‡n Podcast</h2>
+                    <p class="tagline">Quáº£n lÃ½ vÃ  nghe láº¡i cÃ¡c podcast Ä‘Ã£ lÆ°u cá»§a báº¡n</p>
                 </header>
 
         <!-- Library Content -->
@@ -205,7 +205,7 @@
         <div class="modal-content glass-effect card">
             <button class="close-modal-btn" id="close-modal"><i class="fa-solid fa-xmark"></i></button>
             <div class="modal-header">
-                <h2 id="modal-title">Tiêu đề Podcast</h2>
+                <h2 id="modal-title">TiÃªu Ä‘á» Podcast</h2>
                 <div class="podcast-meta" id="modal-meta" style="justify-content: flex-start; gap: 20px;">
                     <!-- Meta info here -->
                 </div>
@@ -216,20 +216,20 @@
                 <div class="result-top card" style="background: rgba(0,0,0,0.2); padding: 1.5rem;">
                     <div class="audio-player-container" style="padding: 15px;">
                         <audio id="modal-audio" controls preload="none">
-                            Trình duyệt không hỗ trợ thẻ audio.
+                            TrÃ¬nh duyá»‡t khÃ´ng há»— trá»£ tháº» audio.
                         </audio>
                     </div>
 
                     <div class="summary-container" style="flex: 1; display: flex; flex-direction: column; min-height: 200px; padding: 1.5rem; margin-top: 1.5rem;">
                         <div class="summary-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h3 style="margin: 0;"><i class="fa-solid fa-file-lines"></i> Tóm tắt nội dung</h3>
+                            <h3 style="margin: 0;"><i class="fa-solid fa-file-lines"></i> TÃ³m táº¯t ná»™i dung</h3>
                             <div class="summary-tabs" style="display: flex; gap: 4px; background: rgba(255, 255, 255, 0.05); padding: 4px; border-radius: 8px;">
-                                <button type="button" id="modal-tab-original" class="tab-btn active" style="background: var(--primary); border: none; padding: 6px 12px; border-radius: 6px; color: var(--bg-dark); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">Ngôn ngữ gốc</button>
-                                <button type="button" id="modal-tab-translated" class="tab-btn" style="background: transparent; border: none; padding: 6px 12px; border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">Ngôn ngữ chuyển đổi</button>
+                                <button type="button" id="modal-tab-original" class="tab-btn active" style="background: var(--primary); border: none; padding: 6px 12px; border-radius: 6px; color: var(--bg-dark); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">NgÃ´n ngá»¯ gá»‘c</button>
+                                <button type="button" id="modal-tab-translated" class="tab-btn" style="background: transparent; border: none; padding: 6px 12px; border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">NgÃ´n ngá»¯ chuyá»ƒn Ä‘á»•i</button>
                             </div>
                         </div>
                         <div class="summary-content" id="modal-summary-content" style="flex: 1; font-size: 0.95rem; line-height: 1.6; color: var(--text-main); background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 8px; overflow-y: auto; max-height: 250px;">
-                            <p>Không có nội dung tóm tắt.</p>
+                            <p>KhÃ´ng cÃ³ ná»™i dung tÃ³m táº¯t.</p>
                         </div>
                     </div>
                 </div>
@@ -238,20 +238,20 @@
                 <div class="result-bottom card ai-chat-container" style="background: rgba(0,0,0,0.2); padding: 0;">
                     <div class="chat-header">
                         <i class="fa-solid fa-robot"></i>
-                        <h3>Trợ lý AI - Hỏi đáp</h3>
+                        <h3>Trá»£ lÃ½ AI - Há»i Ä‘Ã¡p</h3>
                     </div>
                     
                     <div class="chat-messages" id="modal-chat-messages" style="max-height: 250px;">
                         <div class="message ai-message">
                             <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
                             <div class="message-bubble">
-                                Chào bạn! Tôi là trợ lý AI. Bạn có câu hỏi nào về nội dung của podcast này không?
+                                ChÃ o báº¡n! TÃ´i lÃ  trá»£ lÃ½ AI. Báº¡n cÃ³ cÃ¢u há»i nÃ o vá» ná»™i dung cá»§a podcast nÃ y khÃ´ng?
                             </div>
                         </div>
                     </div>
                     
                     <div class="chat-input-area">
-                        <input type="text" id="modal-chat-input" placeholder="Hỏi AI về podcast này..." autocomplete="off">
+                        <input type="text" id="modal-chat-input" placeholder="Há»i AI vá» podcast nÃ y..." autocomplete="off">
                         <button id="modal-send-chat-btn" class="btn-icon">
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
@@ -265,3 +265,4 @@
     <script src="library.js"></script>
 </body>
 </html>
+
