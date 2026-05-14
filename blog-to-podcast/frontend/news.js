@@ -1,69 +1,70 @@
 ﻿document.addEventListener("DOMContentLoaded", () => {
     const GATEWAY = "http://localhost:8000";
 
-    const topicInput      = document.getElementById("topic-input");
-    const generateBtn     = document.getElementById("generate-btn");
-    const btnLoader       = document.getElementById("btn-loader");
-    const formContainer   = document.getElementById("form-container");
+    const topicInput = document.getElementById("topic-input");
+    const generateBtn = document.getElementById("generate-btn");
+    const btnLoader = document.getElementById("btn-loader");
+    const formContainer = document.getElementById("form-container");
     const progressContainer = document.getElementById("progress-container");
     const resultContainer = document.getElementById("result-container");
-    const audioPlayer     = document.getElementById("audio-player");
-    const downloadBtn     = document.getElementById("download-btn");
-    const saveBtn         = document.getElementById("save-btn");
-    const resetBtn        = document.getElementById("reset-btn");
-    const podcastTitle    = document.getElementById("podcast-title");
-    const topicTag        = document.getElementById("topic-tag");
-    const articleList     = document.getElementById("article-list");
-    const articleCount    = document.getElementById("article-count");
-    const summaryBox      = document.getElementById("summary-box");
-    const scriptBox       = document.getElementById("script-box");
-    const scriptToggle    = document.getElementById("script-toggle");
-    const scriptChevron   = document.getElementById("script-chevron");
-    const scriptTabs      = document.getElementById("script-tabs");
-    const tabTranslated   = document.getElementById("tab-translated");
-    const tabOriginal     = document.getElementById("tab-original");
-    const langSelect      = document.getElementById("lang-select");
-    const voiceSelect     = document.getElementById("voice-select");
-    const errorToast      = document.getElementById("error-toast");
-    const errorMsg        = document.getElementById("error-msg");
-    const closeToastBtn   = document.getElementById("close-toast-btn");
-    const chatMessages    = document.getElementById("chat-messages");
-    const chatInput       = document.getElementById("chat-input");
-    const chatSendBtn     = document.getElementById("chat-send-btn");
-    const selTooltip      = document.getElementById("sel-tooltip");
-    const explainPopup    = document.getElementById("explain-popup");
-    const epWord          = document.getElementById("ep-word");
-    const epLoading       = document.getElementById("ep-loading");
-    const epContent       = document.getElementById("ep-content");
-    const epMeaning       = document.getElementById("ep-meaning");
-    const epExample       = document.getElementById("ep-example");
-    const epError         = document.getElementById("ep-error");
-    const epClose         = document.getElementById("ep-close");
+    const audioPlayer = document.getElementById("audio-player");
+    const downloadBtn = document.getElementById("download-btn");
+    const saveBtn = document.getElementById("save-btn");
+    const resetBtn = document.getElementById("reset-btn");
+    const podcastTitle = document.getElementById("podcast-title");
+    const topicTag = document.getElementById("topic-tag");
+    const articleList = document.getElementById("article-list");
+    const articleCount = document.getElementById("article-count");
+    const summaryBox = document.getElementById("summary-box");
+    const scriptBox = document.getElementById("script-box");
+    const scriptToggle = document.getElementById("script-toggle");
+    const scriptChevron = document.getElementById("script-chevron");
+    const scriptTabs = document.getElementById("script-tabs");
+    const tabTranslated = document.getElementById("tab-translated");
+    const tabOriginal = document.getElementById("tab-original");
+    const langSelect = document.getElementById("lang-select");
+    const voiceSelect = document.getElementById("voice-select");
+    const errorToast = document.getElementById("error-toast");
+    const errorMsg = document.getElementById("error-msg");
+    const closeToastBtn = document.getElementById("close-toast-btn");
+    const chatMessages = document.getElementById("chat-messages");
+    const chatInput = document.getElementById("chat-input");
+    const chatSendBtn = document.getElementById("chat-send-btn");
+    const selTooltip = document.getElementById("sel-tooltip");
+    const explainPopup = document.getElementById("explain-popup");
+    const epWord = document.getElementById("ep-word");
+    const epLoading = document.getElementById("ep-loading");
+    const epContent = document.getElementById("ep-content");
+    const epMeaning = document.getElementById("ep-meaning");
+    const epExample = document.getElementById("ep-example");
+    const epError = document.getElementById("ep-error");
+    const epClose = document.getElementById("ep-close");
 
-    const steps = [1,2,3,4].map(i => document.getElementById("step-" + i));
+    const steps = [1, 2, 3, 4].map(i => document.getElementById("step-" + i));
 
     // Parse preview elements
-    const parsePreview   = document.getElementById("parse-preview");
-    const parseLoading   = document.getElementById("parse-loading");
-    const parseOk        = document.getElementById("parse-ok");
-    const parseText      = document.getElementById("parse-text");
-    const parseKeywords  = document.getElementById("parse-keywords");
-    const parseReject    = document.getElementById("parse-reject");
+    const parsePreview = document.getElementById("parse-preview");
+    const parseLoading = document.getElementById("parse-loading");
+    const parseOk = document.getElementById("parse-ok");
+    const parseText = document.getElementById("parse-text");
+    const parseKeywords = document.getElementById("parse-keywords");
+    const parseReject = document.getElementById("parse-reject");
     const parseRejectMsg = document.getElementById("parse-reject-msg");
 
-    let currentScript   = "";
+    let currentScript = "";
     let currentScriptVi = "";
-    let currentContext  = "";
-    let currentTopic    = "";
-    let parsedResult    = null;   // kết quả từ /parse-news-query
-    let parseTimer      = null;
+    let currentContext = "";
+    let currentTopic = "";
+    let parsedResult = null;   // kết quả từ /parse-news-query
+    let parseTimer = null;
 
     // Realtime detection (client-side, không cần AI)
     const REALTIME_MAP = {
-        "gold":          ["giá vàng","vàng sjc","vàng 9999","gia vang","vang sjc"],
-        "exchange_rate": ["tỷ giá","giá usd","đô la","ngoại tệ","ty gia","usd","eur vnd","tỉ giá"],
-        "fuel":          ["giá xăng","giá dầu","xăng dầu","gia xang","xang dau","petrolimex"],
-        "weather":       ["thời tiết","nhiệt độ","dự báo","thoi tiet","mua nang","nắng mưa"],
+        "gold": ["giá vàng", "vàng sjc", "vàng 9999", "gia vang", "vang sjc"],
+        "exchange_rate": ["tỷ giá", "giá usd", "đô la", "ngoại tệ", "ty gia", "usd", "eur vnd", "tỉ giá"],
+        "fuel": ["giá xăng", "giá dầu", "xăng dầu", "gia xang", "xang dau", "petrolimex"],
+        "weather": ["thời tiết", "nhiệt độ", "dự báo", "thoi tiet", "mua nang", "nắng mưa"],
+        "football": ["bóng đá", "lịch thi", "world cup", "ngoại hạng", "c1", "champions league", "v-league", "v league"]
     };
 
     function detectRealtime(query) {
@@ -76,20 +77,20 @@
 
     // Category → topic mapping cho news-service
     const categoryToTopic = {
-        "chinh-tri":"chính trị","giao-duc":"giáo dục","cong-nghe":"công nghệ",
-        "y-te":"y tế","kinh-te":"kinh tế","the-thao":"thể thao","giai-tri":"giải trí",
-        "the-gioi":"thế giới","phap-luat":"pháp luật","moi-truong":"môi trường",
-        "bat-dong-san":"bất động sản","tai-chinh":"tài chính","xa-hoi":"xã hội",
-        "khoa-hoc":"khoa học","other":"default"
+        "chinh-tri": "chính trị", "giao-duc": "giáo dục", "cong-nghe": "công nghệ",
+        "y-te": "y tế", "kinh-te": "kinh tế", "the-thao": "thể thao", "giai-tri": "giải trí",
+        "the-gioi": "thế giới", "phap-luat": "pháp luật", "moi-truong": "môi trường",
+        "bat-dong-san": "bất động sản", "tai-chinh": "tài chính", "xa-hoi": "xã hội",
+        "khoa-hoc": "khoa học", "other": "default"
     };
 
     const voiceMap = {
-        vi: [{value:"vi-VN-Neural2-A",label:"Giong Nu (Mien Nam)"},{value:"vi-VN-Neural2-D",label:"Giong Nam (Mien Bac)"}],
-        en: [{value:"en-US-Neural2-F",label:"Female (US English)"},{value:"en-US-Neural2-J",label:"Male (US English)"}],
-        fr: [{value:"fr-FR-Neural2-A",label:"Giong Nu (Phap)"},{value:"fr-FR-Neural2-B",label:"Giong Nam (Phap)"}],
-        ja: [{value:"ja-JP-Neural2-A",label:"Giong Nu (Nhat)"},{value:"ja-JP-Neural2-B",label:"Giong Nam (Nhat)"}]
+        vi: [{ value: "vi-VN-Neural2-A", label: "Giong Nu (Mien Nam)" }, { value: "vi-VN-Neural2-D", label: "Giong Nam (Mien Bac)" }],
+        en: [{ value: "en-US-Neural2-F", label: "Female (US English)" }, { value: "en-US-Neural2-J", label: "Male (US English)" }],
+        fr: [{ value: "fr-FR-Neural2-A", label: "Giong Nu (Phap)" }, { value: "fr-FR-Neural2-B", label: "Giong Nam (Phap)" }],
+        ja: [{ value: "ja-JP-Neural2-A", label: "Giong Nu (Nhat)" }, { value: "ja-JP-Neural2-B", label: "Giong Nam (Nhat)" }]
     };
-    const langLabels = {vi:"Tieng Viet",en:"English",fr:"Francais",ja:"Nhat"};
+    const langLabels = { vi: "Tieng Viet", en: "English", fr: "Francais", ja: "Nhat" };
 
     langSelect.addEventListener("change", () => {
         const voices = voiceMap[langSelect.value] || voiceMap.vi;
@@ -123,10 +124,11 @@
                 "exchange_rate": "💱 Tỷ giá ngoại tệ (dữ liệu thực)",
                 "fuel": "⛽ Giá xăng dầu (dữ liệu thực)",
                 "weather": "🌤️ Thời tiết (dữ liệu thực)",
+                "football": "⚽ Bảng tin Bóng Đá (dữ liệu thực)",
             };
             parsePreview.style.display = "block";
             parseLoading.style.display = "none";
-            parseReject.style.display  = "none";
+            parseReject.style.display = "none";
             parseText.textContent = rtLabels[rtType] || rtType;
             parseKeywords.innerHTML = "<span style='background:rgba(74,222,128,.15);color:#4ade80;padding:2px 9px;border-radius:8px;font-size:.78rem;font-weight:600;'>Real-time data</span>";
             parseOk.style.display = "block";
@@ -141,8 +143,8 @@
         try {
             const res = await fetch(GATEWAY + "/parse-news-query", {
                 method: "POST",
-                headers: {"Content-Type":"application/json"},
-                body: JSON.stringify({query})
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query })
             });
             if (!res.ok) throw new Error();
             const data = await res.json();
@@ -195,8 +197,8 @@
         if (!parsedResult) {
             try {
                 const res = await fetch(GATEWAY + "/parse-news-query", {
-                    method: "POST", headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify({query})
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query })
                 });
                 if (res.ok) {
                     const d = await res.json();
@@ -206,21 +208,21 @@
                     }
                     parsedResult = d;
                 }
-            } catch {}
+            } catch { }
         }
 
-        const topic    = parsedResult ? (categoryToTopic[parsedResult.category] || query) : query;
+        const topic = parsedResult ? (categoryToTopic[parsedResult.category] || query) : query;
         const keywords = parsedResult ? (parsedResult.search_keywords || []) : [];
         // Detect realtime client-side (nhanh hơn, không tốn API key)
-        const rtType   = detectRealtime(query);
+        const rtType = detectRealtime(query);
         currentTopic = topic;
         startUI();
 
         const timers = [
-            setTimeout(() => { setStep(0,"active", rtType ? "Đang lấy dữ liệu thực..." : "Đang tìm bài báo..."); }, 100),
-            setTimeout(() => { setStep(0,"done","Hoàn tất"); setStep(1,"active","Đang crawl nội dung..."); }, 4500),
-            setTimeout(() => { setStep(1,"done","Hoàn tất"); setStep(2,"active","AI đang tổng hợp..."); }, 13000),
-            setTimeout(() => { setStep(2,"done","Hoàn tất"); setStep(3,"active","Đang tạo audio..."); }, 35000),
+            setTimeout(() => { setStep(0, "active", rtType ? "Đang lấy dữ liệu thực..." : "Đang tìm bài báo..."); }, 100),
+            setTimeout(() => { setStep(0, "done", "Hoàn tất"); setStep(1, "active", "Đang crawl nội dung..."); }, 4500),
+            setTimeout(() => { setStep(1, "done", "Hoàn tất"); setStep(2, "active", "AI đang tổng hợp..."); }, 13000),
+            setTimeout(() => { setStep(2, "done", "Hoàn tất"); setStep(3, "active", "Đang tạo audio..."); }, 35000),
         ];
 
         try {
@@ -229,15 +231,15 @@
                 // Real-time pipeline
                 res = await fetch(GATEWAY + "/realtime-podcast", {
                     method: "POST",
-                    headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify({query, rtype: rtType, language:langSelect.value, voice:voiceSelect.value})
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query, rtype: rtType, language: langSelect.value, voice: voiceSelect.value })
                 });
             } else {
                 // News RSS pipeline
                 res = await fetch(GATEWAY + "/generate-news-podcast", {
                     method: "POST",
-                    headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify({topic, keywords, language:langSelect.value, voice:voiceSelect.value, max_articles:5})
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ topic, keywords, language: langSelect.value, voice: voiceSelect.value, max_articles: 5 })
                 });
             }
             timers.forEach(t => clearTimeout(t));
@@ -248,18 +250,21 @@
             data = await res.json();
             // Normalize realtime response để dùng chung showResult
             if (rtType && !data.topic) {
-                data.topic   = query;
+                data.topic = query;
                 data.summary = data.raw_data || "";
                 data.articles = [];
             }
             steps.forEach(s => { s.className = "step done"; s.querySelector(".status-text").textContent = "Hoàn tất"; });
             showResult(data);
-        } catch(err) {
+        } catch (err) {
             timers.forEach(t => clearTimeout(t));
             const active = steps.find(s => s.classList.contains("active"));
             if (active) { active.className = "step error"; active.querySelector(".status-text").textContent = "That bai"; }
-            showError(err.message);
-            setTimeout(resetUI, 3500);
+            const isOffline = err instanceof TypeError && (err.message.includes("Failed to fetch") || err.message.includes("NetworkError"));
+            showError(isOffline
+                ? "⚠️ Không kết nối được server. Hãy đảm bảo Docker đang chạy (docker compose up) rồi thử lại!"
+                : err.message);
+            setTimeout(resetUI, 5000);
         }
     });
 
@@ -270,9 +275,9 @@
             podcastTitle.textContent = data.title || ("Podcast: " + data.topic);
             topicTag.textContent = data.topic;
             summaryBox.textContent = data.summary || "";
-            currentScript   = data.script    || "";
+            currentScript = data.script || "";
             currentScriptVi = data.script_vi || data.script || "";
-            currentContext  = (data.summary || "") + "\n\n" + currentScriptVi;
+            currentContext = (data.summary || "") + "\n\n" + currentScriptVi;
             scriptBox.textContent = currentScript;
             scriptBox.style.display = "";
             scriptChevron.style.transform = "rotate(180deg)";
@@ -280,7 +285,7 @@
             if (lang !== "vi") {
                 scriptTabs.style.display = "flex";
                 tabTranslated.textContent = langLabels[lang] || lang;
-                tabOriginal.textContent   = "Tieng Viet";
+                tabOriginal.textContent = "Tieng Viet";
                 tabTranslated.classList.add("active"); tabOriginal.classList.remove("active");
             } else {
                 scriptTabs.style.display = "none";
@@ -295,7 +300,7 @@
             arts.forEach((a, i) => {
                 const div = document.createElement("div");
                 div.className = "article-card";
-                div.innerHTML = "<div class='article-num'>" + (i+1) + "</div>" +
+                div.innerHTML = "<div class='article-num'>" + (i + 1) + "</div>" +
                     "<div style='flex:1;min-width:0;'><a href='" + escHtml(a.url) + "' target='_blank' rel='noopener'>" + escHtml(a.title) + "</a>" +
                     "<div><span class='source-badge'>" + escHtml(a.source) + "</span></div></div>" +
                     "<a href='" + escHtml(a.url) + "' target='_blank' rel='noopener' style='color:#a78bfa;font-size:.8rem;flex-shrink:0;'><i class='fa-solid fa-arrow-up-right-from-square'></i></a>";
@@ -310,11 +315,11 @@
     closeToastBtn.addEventListener("click", () => { errorToast.classList.add("hidden"); });
     saveBtn.addEventListener("click", () => {
         const h = JSON.parse(localStorage.getItem("podcastHistory") || "[]");
-        h.unshift({id:Date.now().toString(), url:"news:"+currentTopic, title:podcastTitle.textContent, date:new Date().toISOString(), language:langSelect.value, audioUrl:audioPlayer.src, originalSummary:summaryBox.textContent});
+        h.unshift({ id: Date.now().toString(), url: "news:" + currentTopic, title: podcastTitle.textContent, date: new Date().toISOString(), language: langSelect.value, audioUrl: audioPlayer.src, originalSummary: summaryBox.textContent });
         localStorage.setItem("podcastHistory", JSON.stringify(h));
         saveBtn.innerHTML = "<i class='fa-solid fa-check'></i> Da luu!";
         saveBtn.style.background = "#4ade80"; saveBtn.style.color = "#000";
-        setTimeout(() => { saveBtn.innerHTML = "<i class='fa-solid fa-bookmark'></i> Luu vao thu vien"; saveBtn.style.background=""; saveBtn.style.color=""; }, 2500);
+        setTimeout(() => { saveBtn.innerHTML = "<i class='fa-solid fa-bookmark'></i> Luu vao thu vien"; saveBtn.style.background = ""; saveBtn.style.color = ""; }, 2500);
     });
 
     function startUI() {
@@ -358,18 +363,18 @@
     // buildContext: cắt thông minh theo từ khóa câu hỏi
     function buildContext(text, question) {
         if (!text) return "";
-        const MAX_TOTAL   = 4500;
-        const HEAD_SIZE   = 500;
+        const MAX_TOTAL = 4500;
+        const HEAD_SIZE = 500;
         const KEYWORD_MAX = 2000;
-        const TAIL_SIZE   = 300;
-        const STOPWORDS = new Set(["la","va","co","khong","cua","trong","ve","de","cho",
-            "voi","cac","mot","nhung","nay","do","duoc","tu","theo","khi","hay","hoac",
-            "thi","ma","nen","vi","do","boi","tai","ra","vao","len","xuong","da","se",
-            "dang","rat","cung","con","day","kia","nhu","hon","nhat","bao","nhieu",
-            "là","và","có","không","của","trong","về","để","cho","với","các","một",
-            "những","này","đó","được","từ","theo","khi","hay","hoặc","thì","mà",
-            "nên","vì","bởi","tại","ra","vào","lên","xuống","đã","sẽ","đang","rất",
-            "cũng","còn","đây","kia","như","hơn","nhất"]);
+        const TAIL_SIZE = 300;
+        const STOPWORDS = new Set(["la", "va", "co", "khong", "cua", "trong", "ve", "de", "cho",
+            "voi", "cac", "mot", "nhung", "nay", "do", "duoc", "tu", "theo", "khi", "hay", "hoac",
+            "thi", "ma", "nen", "vi", "do", "boi", "tai", "ra", "vao", "len", "xuong", "da", "se",
+            "dang", "rat", "cung", "con", "day", "kia", "nhu", "hon", "nhat", "bao", "nhieu",
+            "là", "và", "có", "không", "của", "trong", "về", "để", "cho", "với", "các", "một",
+            "những", "này", "đó", "được", "từ", "theo", "khi", "hay", "hoặc", "thì", "mà",
+            "nên", "vì", "bởi", "tại", "ra", "vào", "lên", "xuống", "đã", "sẽ", "đang", "rất",
+            "cũng", "còn", "đây", "kia", "như", "hơn", "nhất"]);
 
         const keywords = question.toLowerCase()
             .replace(/[?!.,;:]/g, " ")
@@ -416,29 +421,30 @@
         addMsg("<i class='fa-solid fa-spinner fa-spin'></i>", "ai", loadId, true);
         try {
             const res = await fetch(GATEWAY + "/chat", {
-                method:"POST", headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({question:text, context:buildContext(currentContext, text), language:langSelect.value})
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ question: text, context: buildContext(currentContext, text), language: langSelect.value })
             });
             const data = await res.json();
             document.getElementById(loadId)?.remove();
             const conf = data.confidence || "low";
-            const confColor = conf==="high"?"#4ade80":conf==="medium"?"#fbbf24":"#94a3b8";
-            const confLabel = conf==="high"?"Chac chan":conf==="medium"?"Kha chac":"Khong chac";
-            let html = "<div>" + escHtml(data.answer||"Khong co cau tra loi.") + "</div>";
+            const confColor = conf === "high" ? "#4ade80" : conf === "medium" ? "#fbbf24" : "#94a3b8";
+            const confLabel = conf === "high" ? "Chac chan" : conf === "medium" ? "Kha chac" : "Khong chac";
+            let html = "<div>" + renderMd(data.answer || "Khong co cau tra loi.") + "</div>";
             if (data.source) html += "<div class='src-quote'>\"" + escHtml(data.source) + "\"</div>";
             html += "<div class='conf-badge' style='color:" + confColor + ";'>● " + confLabel + "</div>";
             addMsg(html, "ai", null, true);
-        } catch(err) {
+        } catch (err) {
             document.getElementById(loadId)?.remove();
-            addMsg("Loi: " + err.message, "ai");
+            const isOffline = err instanceof TypeError && (err.message.includes("Failed to fetch") || err.message.includes("NetworkError"));
+            addMsg(isOffline ? "⚠️ Server chưa chạy. Vui lòng khởi động Docker!" : "Loi: " + err.message, "ai");
         } finally { chatSendBtn.disabled = false; }
     }
     function addMsg(content, type, id, isHtml) {
         const wrap = document.createElement("div");
-        wrap.className = "chat-msg" + (type==="user"?" user":"");
+        wrap.className = "chat-msg" + (type === "user" ? " user" : "");
         if (id) wrap.id = id;
         const av = document.createElement("div"); av.className = "chat-avatar " + type;
-        av.innerHTML = type==="user"?"<i class='fa-solid fa-user'></i>":"<i class='fa-solid fa-robot'></i>";
+        av.innerHTML = type === "user" ? "<i class='fa-solid fa-user'></i>" : "<i class='fa-solid fa-robot'></i>";
         const bub = document.createElement("div"); bub.className = "chat-bubble " + type;
         if (isHtml) bub.innerHTML = content; else bub.textContent = content;
         wrap.appendChild(av); wrap.appendChild(bub);
@@ -450,15 +456,15 @@
         const sel = window.getSelection(); const word = sel ? sel.toString().trim() : "";
         if (word.length < 2 || word.length > 200) { selTooltip.style.display = "none"; return; }
         const zones = [scriptBox, summaryBox]; let inZone = false;
-        try { const r = sel.getRangeAt(0); inZone = zones.some(z => z && z.contains(r.commonAncestorContainer)); } catch(_) {}
+        try { const r = sel.getRangeAt(0); inZone = zones.some(z => z && z.contains(r.commonAncestorContainer)); } catch (_) { }
         if (!inZone) { selTooltip.style.display = "none"; return; }
         try {
             const r = sel.getRangeAt(0); const rect = r.getBoundingClientRect();
             selTooltip.style.display = "block";
-            selTooltip.style.left = Math.max(8, rect.left + rect.width/2 - 55) + "px";
-            selTooltip.style.top  = (rect.top - 44 + window.scrollY) + "px";
+            selTooltip.style.left = Math.max(8, rect.left + rect.width / 2 - 55) + "px";
+            selTooltip.style.top = (rect.top - 44 + window.scrollY) + "px";
             selTooltip.dataset.word = word;
-        } catch(_) {}
+        } catch (_) { }
     });
     selTooltip.addEventListener("click", async () => {
         const word = selTooltip.dataset.word; if (!word) return;
@@ -466,19 +472,19 @@
         epWord.textContent = '"' + word + '"';
         epLoading.style.display = "block"; epContent.style.display = "none"; epError.style.display = "none";
         explainPopup.style.display = "block";
-        explainPopup.style.left = Math.min(window.innerWidth-330, Math.max(10, window.innerWidth/2-155)) + "px";
-        explainPopup.style.top  = Math.max(10, window.innerHeight/2-100+window.scrollY) + "px";
+        explainPopup.style.left = Math.min(window.innerWidth - 330, Math.max(10, window.innerWidth / 2 - 155)) + "px";
+        explainPopup.style.top = Math.max(10, window.innerHeight / 2 - 100 + window.scrollY) + "px";
         try {
             const res = await fetch(GATEWAY + "/explain", {
-                method:"POST", headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({word, context:currentContext.slice(0,3000), language:langSelect.value})
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ word, context: currentContext.slice(0, 3000), language: langSelect.value })
             });
             if (!res.ok) throw new Error("Loi " + res.status);
             const data = await res.json();
-            epMeaning.innerHTML = "<strong>Nghia:</strong> " + escHtml(data.meaning||"—");
+            epMeaning.innerHTML = "<strong>Nghia:</strong> " + escHtml(data.meaning || "—");
             epExample.innerHTML = data.example ? "Vi du: " + escHtml(data.example) : "";
             epLoading.style.display = "none"; epContent.style.display = "block";
-        } catch(err) {
+        } catch (err) {
             epLoading.style.display = "none"; epError.style.display = "block";
             epError.textContent = "Khong giai thich duoc: " + err.message;
         }
@@ -490,6 +496,21 @@
     });
 
     function escHtml(s) {
-        return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+        return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    // Chuyển Markdown đơn giản → HTML (bold, italic, bullet, xuống dòng)
+    function renderMd(s) {
+        let t = escHtml(String(s));
+        // **bold** → <strong>
+        t = t.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+        // *italic* → <em>
+        t = t.replace(/\*(.+?)\*/g, "<em>$1</em>");
+        // dòng bắt đầu bằng - hoặc • → <li>
+        t = t.replace(/^[\-•]\s+(.+)$/gm, "<li>$1</li>");
+        if (t.includes("<li>")) t = "<ul style='margin:6px 0 0 16px;padding:0;'>" + t + "</ul>";
+        // Xuống dòng → <br>
+        t = t.replace(/\n/g, "<br>");
+        return t;
     }
 });

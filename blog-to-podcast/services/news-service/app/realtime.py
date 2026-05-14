@@ -16,14 +16,97 @@ TIMEOUT = 8
 # ── Giá vàng SJC ─────────────────────────────────────────────────────────────
 
 def get_gold_price() -> dict:
-    """Lấy giá vàng quốc tế và quy đổi sang VND."""
+    """Lấy giá vàng từ Ngọc Thịnh Jewelry, fallback sang SJC."""
+
+    # ── Nguồn 1: Ngọc Thịnh Jewelry (ngocthinh-jewelry.vn) ────────────────
     try:
-        # Lấy tỷ giá USD/VND
+        res = requests.get(
+            "https://ngocthinh-jewelry.vn/pages/bang-gia-vang",
+            timeout=TIMEOUT,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Accept-Language": "vi-VN,vi;q=0.9",
+            },
+        )
+        res.raise_for_status()
+        res.encoding = "utf-8"
+        soup = BeautifulSoup(res.text, "html.parser")
+
+        container = soup.find(class_="flexbanggiavang")
+        if container:
+            content = container.find(class_="contenttogoldflex") or container
+            rows = []
+            # Mỗi row con trực tiếp chứa 3 div: .headerindex1, .headerindex2, .headerindex3
+            for row_div in content.find_all("div", recursive=False):
+                name_el = row_div.find(class_="headerindex1")
+                buy_el  = row_div.find(class_="headerindex2")
+                sell_el = row_div.find(class_="headerindex3")
+                if name_el and buy_el and sell_el:
+                    name = name_el.get_text(strip=True)
+                    buy  = buy_el.get_text(strip=True)
+                    sell = sell_el.get_text(strip=True)
+                    # Bỏ qua hàng tiêu đề
+                    if name and name != "Loại vàng" and any(c.isdigit() for c in buy):
+                        rows.append({"name": name, "buy": buy, "sell": sell})
+            if rows:
+                return {"type": "gold", "data": rows[:8], "source": "Ngọc Thịnh Jewelry (ngocthinh-jewelry.vn)"}
+    except Exception as e:
+        logger.warning(f"[GOLD] Ngoc Thinh error: {e}")
+
+    try:
+        res = requests.get(
+            "https://sjc.com.vn/xml/tygia.xml",
+            timeout=TIMEOUT,
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        res.raise_for_status()
+        soup = BeautifulSoup(res.content, "xml")
+        rows = []
+        for item in soup.find_all("item"):
+            name = item.find("name")
+            buy  = item.find("muavao") or item.find("buy")
+            sell = item.find("bandra") or item.find("sell")
+            if name and buy and sell:
+                rows.append({
+                    "name": name.get_text(strip=True),
+                    "buy":  buy.get_text(strip=True),
+                    "sell": sell.get_text(strip=True),
+                })
+        if rows:
+            return {"type": "gold", "data": rows[:6], "source": "SJC (sjc.com.vn)"}
+    except Exception as e:
+        logger.warning(f"[GOLD] SJC XML error: {e}")
+
+    # ── Nguồn 2: SJC trang chủ scrape ─────────────────────────────────────
+    try:
+        res = requests.get(
+            "https://sjc.com.vn/",
+            timeout=TIMEOUT,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+        )
+        res.encoding = "utf-8"
+        soup = BeautifulSoup(res.text, "html.parser")
+        rows = []
+        for table in soup.find_all("table"):
+            for tr in table.find_all("tr")[1:]:
+                tds = tr.find_all("td")
+                if len(tds) >= 3:
+                    name = tds[0].get_text(strip=True)
+                    buy  = tds[1].get_text(strip=True)
+                    sell = tds[2].get_text(strip=True)
+                    if name and any(c.isdigit() for c in buy):
+                        rows.append({"name": name, "buy": buy, "sell": sell})
+        if rows:
+            return {"type": "gold", "data": rows[:6], "source": "SJC (sjc.com.vn)"}
+    except Exception as e:
+        logger.warning(f"[GOLD] SJC homepage error: {e}")
+
+    # ── Nguồn 3: metals.live + quy đổi đúng ──────────────────────────────
+    try:
         er_res = requests.get("https://open.er-api.com/v6/latest/USD", timeout=TIMEOUT)
         er_res.raise_for_status()
         usd_vnd = er_res.json().get("rates", {}).get("VND", 25450)
 
-        # Lấy giá vàng USD/oz từ metals-api (miễn phí)
         gold_res = requests.get(
             "https://api.metals.live/v1/spot/gold",
             timeout=TIMEOUT,
@@ -31,35 +114,23 @@ def get_gold_price() -> dict:
         )
         gold_res.raise_for_status()
         xau_usd = gold_res.json()[0].get("gold", 0) if gold_res.json() else 0
-
         if not xau_usd:
             raise ValueError("No gold price")
 
-        # Quy đổi: 1 oz = 31.1035g, 1 lượng = 37.5g, 1 chỉ = 3.75g
-        price_luong = round(xau_usd / 31.1035 * 37.5 * usd_vnd / 100000) * 100000
-        price_chi   = round(price_luong / 10 / 10000) * 10000
+        # Công thức đúng: 1 oz = 31.1035g, 1 lượng = 37.5g, 1 chỉ = 3.75g
+        price_luong = round(xau_usd / 31.1035 * 37.5 * usd_vnd / 1_000_000) * 1_000_000
+        price_chi   = round(price_luong / 10 / 100_000) * 100_000  # 1 lượng = 10 chỉ
 
+        note = f"(Giá quốc tế: ${xau_usd:,.0f}/oz | Tỷ giá: {usd_vnd:,.0f} VND/USD)"
         rows = [
-            {"name": "Vàng quốc tế (XAU)", "buy": f"{price_luong:,.0f}", "sell": f"{int(price_luong*1.005):,.0f}"},
-            {"name": "Vàng 1 chỉ (quy đổi)", "buy": f"{price_chi:,.0f}", "sell": f"{int(price_chi*1.005):,.0f}"},
+            {"name": "Vàng quốc tế 1 lượng (quy đổi)", "buy": f"{price_luong:,.0f}", "sell": f"{int(price_luong*1.005):,.0f}"},
+            {"name": "Vàng quốc tế 1 chỉ (quy đổi)",   "buy": f"{price_chi:,.0f}",   "sell": f"{int(price_chi*1.005):,.0f}"},
         ]
-        note = f"(Giá vàng quốc tế: ${xau_usd:,.2f}/oz | Tỷ giá: {usd_vnd:,.0f} VND/USD)"
         return {"type": "gold", "data": rows, "source": f"Metals.live + ExchangeRate-API {note}"}
-
     except Exception as e:
         logger.warning(f"[GOLD] metals.live error: {e}")
 
-    # Fallback: chỉ dùng tỷ giá + giá vàng cố định gần đúng
-    try:
-        er_res = requests.get("https://open.er-api.com/v6/latest/USD", timeout=TIMEOUT)
-        usd_vnd = er_res.json().get("rates", {}).get("VND", 25450)
-        # Giá vàng thế giới khoảng $3200-3400/oz (tháng 5/2026)
-        xau_usd_approx = 3300
-        price_luong = round(xau_usd_approx / 31.1035 * 37.5 * usd_vnd / 100000) * 100000
-        rows = [{"name": "Vàng quốc tế (ước tính)", "buy": f"{price_luong:,.0f}", "sell": f"{int(price_luong*1.005):,.0f}"}]
-        return {"type": "gold", "data": rows, "source": "Ước tính (tỷ giá thực từ ExchangeRate-API)"}
-    except Exception as e2:
-        return {"type": "gold", "data": [], "source": "N/A", "error": str(e2)}
+    return {"type": "gold", "data": [], "source": "N/A", "error": "Không lấy được giá vàng"}
 
 
 
@@ -118,7 +189,40 @@ def get_exchange_rate() -> dict:
 # ── Giá xăng dầu Petrolimex ──────────────────────────────────────────────────
 
 def get_fuel_price() -> dict:
-    """Lấy giá xăng dầu từ Petrolimex."""
+    """Lấy giá xăng dầu từ webgia.com (Petrolimex), fallback sang petrolimex.com.vn."""
+
+    # ── Nguồn 1: webgia.com (HTML tĩnh, dễ scrape) ────────────────────────
+    try:
+        res = requests.get(
+            "https://webgia.com/gia-xang-dau/petrolimex/",
+            timeout=TIMEOUT,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+        )
+        res.raise_for_status()
+        res.encoding = "utf-8"
+        soup = BeautifulSoup(res.text, "html.parser")
+
+        rows = []
+        # Bảng giá có class "table table-radius table-hover"
+        table = soup.find("table", class_="table-radius")
+        if table:
+            for tr in table.find("tbody").find_all("tr"):
+                cells = tr.find_all(["th", "td"])
+                if len(cells) >= 3:
+                    name   = cells[0].get_text(strip=True)
+                    vung1  = cells[1].get_text(strip=True)
+                    vung2  = cells[2].get_text(strip=True) if len(cells) > 2 else ""
+                    if name and any(c.isdigit() for c in vung1):
+                        price_str = f"{vung1} đ/lít (Vùng 1)"
+                        if vung2 and vung2 != vung1:
+                            price_str += f" | {vung2} đ/lít (Vùng 2)"
+                        rows.append({"name": name, "price": price_str})
+        if rows:
+            return {"type": "fuel", "data": rows[:8], "source": "Petrolimex (webgia.com)"}
+    except Exception as e:
+        logger.warning(f"[FUEL] webgia.com error: {e}")
+
+    # ── Nguồn 2: petrolimex.com.vn (fallback) ────────────────────────────
     try:
         res = requests.get(
             "https://www.petrolimex.com.vn/nd/gia-ban-le-xang-dau.html",
@@ -128,44 +232,144 @@ def get_fuel_price() -> dict:
         res.encoding = "utf-8"
         soup = BeautifulSoup(res.text, "html.parser")
         rows = []
-
-        # Tìm bảng giá chính xác hơn
         for table in soup.find_all("table"):
             for tr in table.find_all("tr")[1:10]:
                 tds = tr.find_all("td")
                 if len(tds) >= 2:
                     name  = tds[0].get_text(strip=True)
                     price = tds[-1].get_text(strip=True)
-                    # Chỉ lấy dòng có tên xăng/dầu thực sự
-                    if any(kw in name.lower() for kw in ["xăng", "dầu", "e5", "e10", "ron", "diesel", "mazut", "diezel"]):
+                    if any(kw in name.lower() for kw in ["xăng", "dầu", "e5", "ron", "diesel"]):
                         if any(c.isdigit() for c in price):
                             rows.append({"name": name, "price": price})
-
         if rows:
             return {"type": "fuel", "data": rows[:8], "source": "Petrolimex"}
-
-        # Fallback: tìm text có giá cụ thể
-        for tag in soup.find_all(["p", "li", "span", "div"]):
-            text = tag.get_text(strip=True)
-            if any(kw in text.lower() for kw in ["xăng e5", "xăng e10", "dầu diesel", "ron 95"]):
-                if any(c.isdigit() for c in text) and len(text) < 150:
-                    rows.append({"name": "Giá xăng dầu", "price": text})
-                    if len(rows) >= 5:
-                        break
-
-        if rows:
-            return {"type": "fuel", "data": rows, "source": "Petrolimex"}
         raise ValueError("No fuel price found")
-
     except Exception as e:
         logger.warning(f"[FUEL] Petrolimex error: {e}")
-        # Fallback: thông báo không lấy được
         return {
             "type": "fuel",
-            "data": [{"name": "Lưu ý", "price": "Không lấy được giá xăng real-time. Vui lòng kiểm tra tại petrolimex.com.vn"}],
+            "data": [{"name": "Lưu ý", "price": "Không lấy được giá xăng real-time. Kiểm tra tại petrolimex.com.vn"}],
             "source": "Petrolimex",
             "error": str(e)
         }
+
+
+
+# ── Lịch thi đấu bóng đá ──────────────────────────────────────────────────
+
+def get_football_schedule(query: str = "") -> dict:
+    """Lấy lịch thi đấu bóng đá hôm nay từ bongda.com.vn."""
+    try:
+        import datetime
+        today_obj = datetime.date.today()
+        today = today_obj.strftime("%d-%m-%Y")
+        today_api = today_obj.strftime("%Y-%m-%d")
+
+        res = requests.get(
+            "https://bongda.com.vn/lich-thi-dau",
+            timeout=TIMEOUT,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+        )
+        res.raise_for_status()
+        res.encoding = "utf-8"
+        soup = BeautifulSoup(res.text, "html.parser")
+
+        matches = []
+        q_lower = query.lower()
+
+        # Bản đồ giải đấu → từ khóa nhập của người dùng
+        LEAGUE_FILTER = {
+            "world cup":        ["world cup", "fifa world", "w/c"],
+            "ngoại hạng anh":   ["ngoại hạng", "premier league", "epl"],
+            "champions league": ["champions", "c1", "ucl"],
+            "v-league":         ["v-league", "v league", "việt nam"],
+            "laliga":           ["laliga", "la liga", "tây ban nha"],
+            "serie a":          ["serie a", "ý", "italy"],
+            "bundesliga":       ["bundesliga", "đức"],
+            "ligue 1":          ["ligue 1", "ligue1", "pháp"],
+        }
+        target_league = None
+        for league_name, kws in LEAGUE_FILTER.items():
+            if any(kw in q_lower for kw in kws):
+                target_league = league_name
+                break
+
+        # Nếu người dùng hỏi World Cup 2026, trả về lịch tĩnh vì hiện chưa đá
+        if target_league == "world cup":
+            wc_matches = [
+                {"league": "World Cup 2026", "time": "11/06/2026", "home": "Mexico", "away": "Chưa xác định", "score": "Khai mạc"},
+                {"league": "World Cup 2026", "time": "12/06/2026", "home": "Canada", "away": "Chưa xác định", "score": "Vòng bảng"},
+                {"league": "World Cup 2026", "time": "12/06/2026", "home": "Mỹ", "away": "Chưa xác định", "score": "Vòng bảng"}
+            ]
+            return {"type": "football", "data": wc_matches, "source": "Lịch chuẩn FIFA 2026", "date": "Sắp diễn ra"}
+
+        url = f"https://bongda.com.vn/api/fixtures/get-by-date?date={today_api}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "Accept-Language": "vi-VN,vi;q=0.9",
+        }
+        res = requests.get(url, headers=headers, timeout=TIMEOUT)
+        res.raise_for_status()
+
+        data_json = res.json()
+        html_content = data_json.get("html", "")
+        if not html_content:
+            raise ValueError("No HTML content in JSON API response")
+
+        soup = BeautifulSoup(html_content, "html.parser")
+
+        for match_el in soup.find_all("li", class_="match-detail"):
+            league_el = match_el.find(class_="league")
+            current_league = league_el.get_text(strip=True) if league_el else "Giải đấu khác"
+
+            # Lọc giải đấu
+            if target_league and target_league.lower() not in current_league.lower():
+                continue
+
+            time_el = match_el.find(class_="match-time") or match_el.find(class_="datetime")
+            home_el = match_el.find(class_="home-team")
+            away_el = match_el.find(class_="away-team")
+            status  = match_el.find(class_="status")
+
+            time_txt = time_el.get_text(strip=True).replace("\n", " ").strip() if time_el else ""
+            home_txt = home_el.get_text(strip=True) if home_el else ""
+            away_txt = away_el.get_text(strip=True) if away_el else ""
+            score_txt = status.get_text(strip=True).replace("\n", " ").strip() if status else "vs"
+
+            if home_txt and away_txt:
+                matches.append({
+                    "league": current_league,
+                    "time":   time_txt,
+                    "home":   home_txt,
+                    "away":   away_txt,
+                    "score":  score_txt,
+                })
+            
+            if len(matches) >= 15:
+                break
+
+        if not matches:
+            if target_league:
+                # Trả về data giả định để AI đọc thành một câu thân thiện
+                return {
+                    "type": "football",
+                    "data": [{
+                        "league": target_league,
+                        "time": "Hôm nay",
+                        "home": "Không có",
+                        "away": "trận nào",
+                        "score": "-"
+                    }],
+                    "source": "Bongda.com.vn API",
+                    "date": today
+                }
+            else:
+                raise ValueError("Không tìm thấy trận đấu nào hôm nay")
+
+        return {"type": "football", "data": matches, "source": "Bongda.com.vn", "date": today}
+    except Exception as e:
+        logger.warning(f"[FOOTBALL] bongda.com.vn error: {e}")
+        return {"type": "football", "data": [], "source": "bongda.com.vn", "error": str(e)}
 
 
 # ── Thời tiết OpenWeatherMap ──────────────────────────────────────────────────
@@ -213,6 +417,11 @@ REALTIME_KEYWORDS = {
     "exchange_rate": ["tỷ giá", "giá usd", "đô la", "ngoại tệ", "ty gia", "usd vnd", "eur vnd"],
     "fuel":          ["giá xăng", "giá dầu", "xăng dầu", "petrolimex", "gia xang"],
     "weather":       ["thời tiết", "nhiệt độ", "dự báo thời tiết", "thoi tiet", "mưa nắng"],
+    "football":      [
+        "bóng đá", "lịch thi đấu", "lich thi dau", "world cup", "ngoại hạng",
+        "champions league", "v-league", "bong da", "kết quả bóng đá", "tỷ số",
+        "laliga", "serie a", "bundesliga", "ligue 1", "c1 châu âu",
+    ],
 }
 
 
@@ -233,6 +442,8 @@ def fetch_realtime(rtype: str, query: str = "") -> dict:
         return get_exchange_rate()
     if rtype == "fuel":
         return get_fuel_price()
+    if rtype == "football":
+        return get_football_schedule(query)
     if rtype == "weather":
         # Trích tên thành phố từ query nếu có
         city = "Ho Chi Minh City"
@@ -258,9 +469,9 @@ def format_realtime_text(result: dict) -> str:
         return f"Không lấy được dữ liệu từ {source}: {result['error']}"
 
     if rtype == "gold":
-        lines = [f"GIÁ VÀNG SJC (nguồn: {source}):"]
+        lines = [f"GIÁ VÀNG (nguồn: {source}):"]
         for row in data:
-            lines.append(f"- {row['name']}: Mua {row['buy']} | Bán {row['sell']} (VNĐ/lượng)")
+            lines.append(f"- {row['name']}: Mua vào {row['buy']} | Bán ra {row['sell']} VNĐ")
         return "\n".join(lines)
 
     if rtype == "exchange_rate":
@@ -282,6 +493,18 @@ def format_realtime_text(result: dict) -> str:
                 f"- {row['city']}: {row['temp']}°C, cảm giác {row['feels_like']}°C, "
                 f"{row['description']}, độ ẩm {row['humidity']}%, gió {row['wind_speed']} m/s"
             )
+        return "\n".join(lines)
+
+    if rtype == "football":
+        date_str = result.get("date", "hôm nay")
+        lines = [f"LỊCH / KẾT QUẢ BÓNG ĐÁ {date_str} (nguồn: {source}):"]
+        current_league = ""
+        for m in data:
+            if m.get("league") and m["league"] != current_league:
+                current_league = m["league"]
+                lines.append(f"\n[{current_league}]")
+            score = m.get("score", "vs")
+            lines.append(f"- {m.get('time', '')} | {m['home']} {score} {m['away']}")
         return "\n".join(lines)
 
     return str(data)

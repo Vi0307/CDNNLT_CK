@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blog to Podcast AI Converter</title>
     <!-- Meta Descriptions cho SEO -->
-    <meta name="description" content="Chuyển đổi bài viết blog, tin tức thành podcast audio chất lượng cao bằng AI với giọng đọc tự nhiên.">
+    <meta name="description" content="Chuyá»ƒn Ä‘á»•i bÃ i viáº¿t blog, tin tá»©c thÃ nh podcast audio cháº¥t lÆ°á»£ng cao báº±ng AI vá»›i giá»ng Ä‘á»c tá»± nhiÃªn.">
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <!-- CSS -->
     <link rel="stylesheet" href="styles.css?v=4">
 </head>
@@ -33,15 +33,15 @@
             <nav class="nav-menu">
                 <a href="index.html" class="nav-item active">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Tạo Podcast</span>
+                    <span>Táº¡o Podcast</span>
                 </a>
                 <a href="news.html" class="nav-item">
                     <i class="fa-solid fa-newspaper"></i>
-                    <span>Tin tức</span>
+                    <span>Tin tá»©c</span>
                 </a>
                 <a href="library.html" class="nav-item">
                     <i class="fa-solid fa-book-bookmark"></i>
-                    <span>Thư viện</span>
+                    <span>ThÆ° viá»‡n</span>
                 </a>
             </nav>
         </aside>
@@ -51,15 +51,15 @@
             <main class="app-container">
                 <!-- Header -->
                 <header class="app-header">
-                    <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.5rem; margin-bottom: 10px;">Chuyển đổi bài viết</h2>
-                    <p class="tagline">Biến mọi bài viết thành trải nghiệm âm thanh tuyệt vời</p>
+                    <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.5rem; margin-bottom: 10px;">Chuyá»ƒn Ä‘á»•i bÃ i viáº¿t</h2>
+                    <p class="tagline">Biáº¿n má»i bÃ i viáº¿t thÃ nh tráº£i nghiá»‡m Ã¢m thanh tuyá»‡t vá»i</p>
                 </header>
 
         <!-- Main Form Card -->
         <section class="card glass-effect form-section" id="form-container">
             <form id="convert-form" novalidate>
                     <div class="input-group">
-                    <label for="url-input">Đường dẫn bài viết (URL)</label>
+                    <label for="url-input">ÄÆ°á»ng dáº«n bÃ i viáº¿t (URL)</label>
                     <div class="input-field">
                         <i class="fa-solid fa-link icon-left"></i>
                         <input type="url" id="url-input" placeholder="https://vnexpress.net/bai-viet-cua-ban.html" required autocomplete="off">
@@ -69,24 +69,24 @@
 
                 <div class="settings-row">
                     <div class="input-group half">
-                        <label for="language-select">Ngôn ngữ</label>
+                        <label for="language-select">NgÃ´n ngá»¯</label>
                         <div class="select-field">
                             <i class="fa-solid fa-globe icon-left"></i>
                             <select id="language-select">
-                                <option value="vi">Tiếng Việt</option>
+                                <option value="vi">Tiáº¿ng Viá»‡t</option>
                                 <option value="en">English</option>
-                                <option value="fr">Tiếng Pháp (Français)</option>
-                                <option value="ja">Tiếng Nhật (日本語)</option>
+                                <option value="fr">Tiáº¿ng PhÃ¡p (FranÃ§ais)</option>
+                                <option value="ja">Tiáº¿ng Nháº­t (æ—¥æœ¬èªž)</option>
                             </select>
                             <i class="fa-solid fa-chevron-down icon-right"></i>
                         </div>
                     </div>
                     <div class="input-group half">
-                        <label for="voice-select">Giọng AI</label>
+                        <label for="voice-select">Giá»ng AI</label>
                         <div class="select-field">
                             <i class="fa-solid fa-waveform-lines icon-left"></i>
                             <select id="voice-select">
-                                <option value="vi-VN-Neural2-A">Giọng Nữ (Miền Nam)</option>
+                                <option value="vi-VN-Neural2-A">Giá»ng Ná»¯ (Miá»n Nam)</option>
                             </select>
                             <i class="fa-solid fa-chevron-down icon-right"></i>
                         </div>
@@ -94,7 +94,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-glow" id="submit-btn">
-                    <span class="btn-text">Bắt đầu tạo Podcast</span>
+                    <span class="btn-text">Báº¯t Ä‘áº§u táº¡o Podcast</span>
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                     <div class="loader-spinner hidden" id="btn-loader"></div>
                 </button>
@@ -110,8 +110,8 @@
                         <div class="ring"></div>
                     </div>
                     <div class="step-info">
-                        <h3>Trích xuất nội dung</h3>
-                        <p class="status-text">Đang chờ...</p>
+                        <h3>TrÃ­ch xuáº¥t ná»™i dung</h3>
+                        <p class="status-text">Äang chá»...</p>
                     </div>
                 </div>
 
@@ -123,8 +123,8 @@
                         <div class="ring"></div>
                     </div>
                     <div class="step-info">
-                        <h3>Biên tập kịch bản AI</h3>
-                        <p class="status-text">Đang chờ...</p>
+                        <h3>BiÃªn táº­p ká»‹ch báº£n AI</h3>
+                        <p class="status-text">Äang chá»...</p>
                     </div>
                 </div>
 
@@ -136,8 +136,8 @@
                         <div class="ring"></div>
                     </div>
                     <div class="step-info">
-                        <h3>Tổng hợp âm thanh</h3>
-                        <p class="status-text">Đang chờ...</p>
+                        <h3>Tá»•ng há»£p Ã¢m thanh</h3>
+                        <p class="status-text">Äang chá»...</p>
                     </div>
                 </div>
             </div>
@@ -152,37 +152,37 @@
                         <div class="success-icon-wrapper">
                             <i class="fa-solid fa-circle-check"></i>
                         </div>
-                        <h2>Podcast Đã Sẵn Sàng!</h2>
+                        <h2>Podcast ÄÃ£ Sáºµn SÃ ng!</h2>
                     </div>
                     
                     <div class="audio-player-container">
                         <audio id="audio-player" controls preload="metadata">
-                            Trình duyệt của bạn không hỗ trợ thẻ audio.
+                            TrÃ¬nh duyá»‡t cá»§a báº¡n khÃ´ng há»— trá»£ tháº» audio.
                         </audio>
                     </div>
 
                     <div class="summary-container" style="flex: 1; display: flex; flex-direction: column; min-height: 200px;">
                         <div class="summary-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h3 style="margin: 0;"><i class="fa-solid fa-file-lines"></i> Tóm tắt nội dung</h3>
+                            <h3 style="margin: 0;"><i class="fa-solid fa-file-lines"></i> TÃ³m táº¯t ná»™i dung</h3>
                             <div class="summary-tabs" style="display: flex; gap: 4px; background: rgba(255, 255, 255, 0.05); padding: 4px; border-radius: 8px;">
-                                <button type="button" id="tab-original" class="tab-btn active" style="background: var(--primary-color); border: none; padding: 6px 12px; border-radius: 6px; color: white; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">Ngôn ngữ gốc</button>
-                                <button type="button" id="tab-translated" class="tab-btn" style="background: transparent; border: none; padding: 6px 12px; border-radius: 6px; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">Ngôn ngữ chuyển đổi</button>
+                                <button type="button" id="tab-original" class="tab-btn active" style="background: var(--primary-color); border: none; padding: 6px 12px; border-radius: 6px; color: white; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">NgÃ´n ngá»¯ gá»‘c</button>
+                                <button type="button" id="tab-translated" class="tab-btn" style="background: transparent; border: none; padding: 6px 12px; border-radius: 6px; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">NgÃ´n ngá»¯ chuyá»ƒn Ä‘á»•i</button>
                             </div>
                         </div>
                         <div class="summary-content" id="dynamic-summary-content" style="flex: 1; font-size: 1rem; line-height: 1.6; color: var(--text-primary); background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 8px; overflow-y: auto; max-height: 350px;">
-                            <p>Đang tải tóm tắt...</p>
+                            <p>Äang táº£i tÃ³m táº¯t...</p>
                         </div>
                     </div>
 
                     <div class="action-buttons">
                         <a href="#" id="download-btn" class="btn btn-secondary" download>
-                            <i class="fa-solid fa-download"></i> Tải MP3
+                            <i class="fa-solid fa-download"></i> Táº£i MP3
                         </a>
                         <button id="save-btn" class="btn btn-secondary" style="background: var(--primary-dark); color: var(--bg-dark); border: none;">
-                            <i class="fa-solid fa-bookmark"></i> Lưu
+                            <i class="fa-solid fa-bookmark"></i> LÆ°u
                         </button>
                         <button id="reset-btn" class="btn btn-outline">
-                            <i class="fa-solid fa-rotate-left"></i> Tạo Mới
+                            <i class="fa-solid fa-rotate-left"></i> Táº¡o Má»›i
                         </button>
                     </div>
                 </div>
@@ -191,20 +191,20 @@
                 <div class="result-bottom card glass-effect ai-chat-container">
                     <div class="chat-header">
                         <i class="fa-solid fa-robot"></i>
-                        <h3>Trợ lý AI - Hỏi đáp</h3>
+                        <h3>Trá»£ lÃ½ AI - Há»i Ä‘Ã¡p</h3>
                     </div>
                     
                     <div class="chat-messages" id="chat-messages">
                         <div class="message ai-message">
                             <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
                             <div class="message-bubble">
-                                Chào bạn! Tôi là trợ lý AI. Bạn có câu hỏi nào về nội dung của podcast này không?
+                                ChÃ o báº¡n! TÃ´i lÃ  trá»£ lÃ½ AI. Báº¡n cÃ³ cÃ¢u há»i nÃ o vá» ná»™i dung cá»§a podcast nÃ y khÃ´ng?
                             </div>
                         </div>
                     </div>
                     
                     <div class="chat-input-area">
-                        <input type="text" id="chat-input" placeholder="Hỏi AI về podcast này..." autocomplete="off">
+                        <input type="text" id="chat-input" placeholder="Há»i AI vá» podcast nÃ y..." autocomplete="off">
                         <button id="send-chat-btn" class="btn-icon">
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
@@ -222,8 +222,8 @@
             <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
         <div class="toast-content">
-            <h4>Lỗi kết nối</h4>
-            <p id="error-msg">Không thể lấy dữ liệu từ URL.</p>
+            <h4>Lá»—i káº¿t ná»‘i</h4>
+            <p id="error-msg">KhÃ´ng thá»ƒ láº¥y dá»¯ liá»‡u tá»« URL.</p>
         </div>
         <button class="close-toast" id="close-toast-btn">
             <i class="fa-solid fa-xmark"></i>
@@ -246,7 +246,7 @@
     ">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <span style="font-size:0.8rem; color:#a78bfa; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">
-                <i class="fa-solid fa-book-open"></i> Giải thích
+                <i class="fa-solid fa-book-open"></i> Giáº£i thÃ­ch
             </span>
             <button id="explain-popup-close" style="background:none;border:none;color:#888;cursor:pointer;font-size:1rem;">
                 <i class="fa-solid fa-xmark"></i>
@@ -255,7 +255,7 @@
         <div id="explain-popup-word" style="font-size:1rem; font-weight:700; color:#e2e8f0; margin-bottom:8px;"></div>
         <div id="explain-popup-body" style="font-size:0.9rem; color:#cbd5e1; line-height:1.6;">
             <div id="explain-loading" style="text-align:center; padding:10px;">
-                <i class="fa-solid fa-spinner fa-spin" style="color:#a78bfa;"></i> Đang giải thích...
+                <i class="fa-solid fa-spinner fa-spin" style="color:#a78bfa;"></i> Äang giáº£i thÃ­ch...
             </div>
             <div id="explain-content" style="display:none;">
                 <div id="explain-meaning" style="margin-bottom:8px;"></div>
@@ -281,10 +281,11 @@
         white-space: nowrap;
         user-select: none;
     ">
-        <i class="fa-solid fa-book-open"></i> Giải thích
+        <i class="fa-solid fa-book-open"></i> Giáº£i thÃ­ch
     </div>
 
     <!-- Script -->
     <script src="app.js?v=7"></script>
 </body>
 </html>
+
