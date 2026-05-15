@@ -60,11 +60,11 @@
 
     // Realtime detection (client-side, không cần AI)
     const REALTIME_MAP = {
-        "gold": ["giá vàng", "vàng sjc", "vàng 9999", "gia vang", "vang sjc"],
-        "exchange_rate": ["tỷ giá", "giá usd", "đô la", "ngoại tệ", "ty gia", "usd", "eur vnd", "tỉ giá"],
-        "fuel": ["giá xăng", "giá dầu", "xăng dầu", "gia xang", "xang dau", "petrolimex"],
-        "weather": ["thời tiết", "nhiệt độ", "dự báo", "thoi tiet", "mua nang", "nắng mưa"],
-        "football": ["bóng đá", "lịch thi", "world cup", "ngoại hạng", "c1", "champions league", "v-league", "v league"]
+        "gold": ["gold price", "gold sjc", "gold 9999", "gia vang", "vang sjc"],
+        "exchange_rate": ["exchange rate", "usd price", "dollar", "foreign currency", "ty gia", "usd", "eur vnd"],
+        "fuel": ["fuel price", "gas price", "oil price", "gia xang", "xang dau", "petrolimex"],
+        "weather": ["weather", "temperature", "forecast", "thoi tiet", "rain", "sunshine"],
+        "football": ["football", "soccer", "match schedule", "world cup", "premier league", "champions league", "v-league"]
     };
 
     function detectRealtime(query) {
@@ -85,12 +85,12 @@
     };
 
     const voiceMap = {
-        vi: [{ value: "vi-VN-Neural2-A", label: "Giong Nu (Mien Nam)" }, { value: "vi-VN-Neural2-D", label: "Giong Nam (Mien Bac)" }],
+        vi: [{ value: "vi-VN-Neural2-A", label: "Female Voice (Southern)" }, { value: "vi-VN-Neural2-D", label: "Male Voice (Northern)" }],
         en: [{ value: "en-US-Neural2-F", label: "Female (US English)" }, { value: "en-US-Neural2-J", label: "Male (US English)" }],
-        fr: [{ value: "fr-FR-Neural2-A", label: "Giong Nu (Phap)" }, { value: "fr-FR-Neural2-B", label: "Giong Nam (Phap)" }],
-        ja: [{ value: "ja-JP-Neural2-A", label: "Giong Nu (Nhat)" }, { value: "ja-JP-Neural2-B", label: "Giong Nam (Nhat)" }]
+        fr: [{ value: "fr-FR-Neural2-A", label: "Female Voice (French)" }, { value: "fr-FR-Neural2-B", label: "Male Voice (French)" }],
+        ja: [{ value: "ja-JP-Neural2-A", label: "Female Voice (Japanese)" }, { value: "ja-JP-Neural2-B", label: "Male Voice (Japanese)" }]
     };
-    const langLabels = { vi: "Tieng Viet", en: "English", fr: "Francais", ja: "Nhat" };
+    const langLabels = { vi: "Vietnamese", en: "English", fr: "French", ja: "Japanese" };
 
     langSelect.addEventListener("change", () => {
         const voices = voiceMap[langSelect.value] || voiceMap.vi;
@@ -120,11 +120,11 @@
         const rtType = detectRealtime(query);
         if (rtType) {
             const rtLabels = {
-                "gold": "📊 Giá vàng (dữ liệu thực)",
-                "exchange_rate": "💱 Tỷ giá ngoại tệ (dữ liệu thực)",
-                "fuel": "⛽ Giá xăng dầu (dữ liệu thực)",
-                "weather": "🌤️ Thời tiết (dữ liệu thực)",
-                "football": "⚽ Bảng tin Bóng Đá (dữ liệu thực)",
+                "gold": "📊 Gold Price (real-time data)",
+                "exchange_rate": "💱 Exchange Rate (real-time data)",
+                "fuel": "⛽ Fuel Price (real-time data)",
+                "weather": "🌤️ Weather (real-time data)",
+                "football": "⚽ Football News (real-time data)",
             };
             parsePreview.style.display = "block";
             parseLoading.style.display = "none";
@@ -156,7 +156,7 @@
             } else {
                 parsedResult = data;
                 const catLabel = categoryToTopic[data.category] || data.category;
-                parseText.textContent = "Chủ đề: " + catLabel;
+                parseText.textContent = "Topic: " + catLabel;
                 parseKeywords.innerHTML = (data.search_keywords || [])
                     .map(k => "<span style='background:rgba(139,92,246,.18);color:#c4b5fd;padding:2px 9px;border-radius:8px;font-size:.78rem;font-weight:600;'>" + k + "</span>")
                     .join("");
@@ -189,7 +189,7 @@
 
         // Nếu parse xác định không hợp lệ → chặn
         if (parsedResult !== null && parsedResult.is_valid_news_topic === false) {
-            showError(parsedResult.rejection_reason || "Không phải chủ đề tin tức.");
+            showError(parsedResult.rejection_reason || "Not a valid news topic.");
             return;
         }
 
@@ -203,7 +203,7 @@
                 if (res.ok) {
                     const d = await res.json();
                     if (!d.is_valid_news_topic) {
-                        showError(d.rejection_reason || "Không phải chủ đề tin tức.");
+                        showError(d.rejection_reason || "Not a valid news topic.");
                         return;
                     }
                     parsedResult = d;
@@ -219,10 +219,10 @@
         startUI();
 
         const timers = [
-            setTimeout(() => { setStep(0, "active", rtType ? "Đang lấy dữ liệu thực..." : "Đang tìm bài báo..."); }, 100),
-            setTimeout(() => { setStep(0, "done", "Hoàn tất"); setStep(1, "active", "Đang crawl nội dung..."); }, 4500),
-            setTimeout(() => { setStep(1, "done", "Hoàn tất"); setStep(2, "active", "AI đang tổng hợp..."); }, 13000),
-            setTimeout(() => { setStep(2, "done", "Hoàn tất"); setStep(3, "active", "Đang tạo audio..."); }, 35000),
+            setTimeout(() => { setStep(0, "active", rtType ? "Fetching real-time data..." : "Finding articles..."); }, 100),
+            setTimeout(() => { setStep(0, "done", "Done"); setStep(1, "active", "Crawling content..."); }, 4500),
+            setTimeout(() => { setStep(1, "done", "Done"); setStep(2, "active", "AI synthesizing..."); }, 13000),
+            setTimeout(() => { setStep(2, "done", "Done"); setStep(3, "active", "Generating audio..."); }, 35000),
         ];
 
         try {
@@ -245,7 +245,7 @@
             timers.forEach(t => clearTimeout(t));
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                throw new Error(err.detail || "Lỗi " + res.status);
+                throw new Error(err.detail || "Error " + res.status);
             }
             data = await res.json();
             // Normalize realtime response để dùng chung showResult
@@ -254,15 +254,15 @@
                 data.summary = data.raw_data || "";
                 data.articles = [];
             }
-            steps.forEach(s => { s.className = "step done"; s.querySelector(".status-text").textContent = "Hoàn tất"; });
+            steps.forEach(s => { s.className = "step done"; s.querySelector(".status-text").textContent = "Done"; });
             showResult(data);
         } catch (err) {
             timers.forEach(t => clearTimeout(t));
             const active = steps.find(s => s.classList.contains("active"));
-            if (active) { active.className = "step error"; active.querySelector(".status-text").textContent = "That bai"; }
+            if (active) { active.className = "step error"; active.querySelector(".status-text").textContent = "Failed"; }
             const isOffline = err instanceof TypeError && (err.message.includes("Failed to fetch") || err.message.includes("NetworkError"));
             showError(isOffline
-                ? "⚠️ Không kết nối được server. Hãy đảm bảo Docker đang chạy (docker compose up) rồi thử lại!"
+                ? "⚠️ Cannot connect to server. Make sure Docker is running (docker compose up) and try again!"
                 : err.message);
             setTimeout(resetUI, 5000);
         }
@@ -285,7 +285,7 @@
             if (lang !== "vi") {
                 scriptTabs.style.display = "flex";
                 tabTranslated.textContent = langLabels[lang] || lang;
-                tabOriginal.textContent = "Tieng Viet";
+                tabOriginal.textContent = "Vietnamese";
                 tabTranslated.classList.add("active"); tabOriginal.classList.remove("active");
             } else {
                 scriptTabs.style.display = "none";
@@ -307,21 +307,14 @@
                 articleList.appendChild(div);
             });
             chatMessages.innerHTML = "<div class='chat-msg'><div class='chat-avatar ai'><i class='fa-solid fa-robot'></i></div>" +
-                "<div class='chat-bubble ai'>Toi da doc xong <strong>" + arts.length + "</strong> bai bao ve chu de <strong>" + escHtml(data.topic) + "</strong>. Ban muon hoi gi?</div></div>";
+                "<div class='chat-bubble ai'>I've finished reading <strong>" + arts.length + "</strong> articles about <strong>" + escHtml(data.topic) + "</strong>. What would you like to know?</div></div>";
         }, 600);
     }
 
     resetBtn.addEventListener("click", resetUI);
     closeToastBtn.addEventListener("click", () => { errorToast.classList.add("hidden"); });
-    saveBtn.addEventListener("click", () => {
-        const h = JSON.parse(localStorage.getItem("podcastHistory") || "[]");
-        h.unshift({ id: Date.now().toString(), url: "news:" + currentTopic, title: podcastTitle.textContent, date: new Date().toISOString(), language: langSelect.value, audioUrl: audioPlayer.src, originalSummary: summaryBox.textContent });
-        localStorage.setItem("podcastHistory", JSON.stringify(h));
-        saveBtn.innerHTML = "<i class='fa-solid fa-check'></i> Da luu!";
-        saveBtn.style.background = "#4ade80"; saveBtn.style.color = "#000";
-        setTimeout(() => { saveBtn.innerHTML = "<i class='fa-solid fa-bookmark'></i> Luu vao thu vien"; saveBtn.style.background = ""; saveBtn.style.color = ""; }, 2500);
-    });
 
+    function generateBtn_startUI() {}
     function startUI() {
         generateBtn.disabled = true;
         generateBtn.querySelector(".btn-text").style.display = "none";
@@ -330,7 +323,7 @@
         formContainer.classList.add("hidden");
         progressContainer.classList.remove("hidden");
         resultContainer.classList.add("hidden");
-        steps.forEach(s => { s.className = "step pending"; s.querySelector(".status-text").textContent = "Dang cho..."; });
+        steps.forEach(s => { s.className = "step pending"; s.querySelector(".status-text").textContent = "Waiting..."; });
     }
     function resetUI() {
         generateBtn.disabled = false;

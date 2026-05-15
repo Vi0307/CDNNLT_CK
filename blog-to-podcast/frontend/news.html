@@ -1,9 +1,9 @@
 ﻿<!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog2Cast - Podcast Tin Tức AI</title>
+    <title>Blog2Cast - AI News Podcast</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css?v=4">
@@ -68,28 +68,26 @@
                 <h1>Blog<span>2</span>Cast</h1>
             </div>
             <nav class="nav-menu">
-                <a href="index.html" class="nav-item"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Tạo Podcast</span></a>
-                <a href="news.html" class="nav-item active"><i class="fa-solid fa-newspaper"></i><span>Tin tức</span></a>
-                <a href="library.html" class="nav-item"><i class="fa-solid fa-book-bookmark"></i><span>Thư viện</span></a>
+                <a href="index.html" class="nav-item"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Create Podcast</span></a>
+                <a href="news.html" class="nav-item active"><i class="fa-solid fa-newspaper"></i><span>News</span></a>
             </nav>
         </aside>
         <div class="main-content">
             <main class="app-container">
                 <header class="app-header">
-                    <h2 style="font-family:'Outfit',sans-serif;font-size:2.4rem;margin-bottom:8px;">Podcast từ Tin Tức</h2>
-                    <p class="tagline">Chọn chủ đề — AI tự tìm, tổng hợp và đọc cho bạn nghe</p>
+                    <h2 style="font-family:'Outfit',sans-serif;font-size:2.4rem;margin-bottom:8px;">News Podcast</h2>
+                    <p class="tagline">Pick a topic — AI finds, summarizes, and reads the news for you</p>
                 </header>
 
                 <!-- Form -->
                 <section class="card glass-effect form-section" id="form-container">
 
-                    <!-- Ô nhập tự do -->
                     <div class="input-group">
-                        <label for="topic-input">Bạn muốn nghe tin gì?</label>
+                        <label for="topic-input">What do you want to hear about?</label>
                         <div class="input-field" style="position:relative;">
                             <i class="fa-solid fa-magnifying-glass icon-left"></i>
                             <input type="text" id="topic-input"
-                                placeholder="Ví dụ: giá vàng hôm nay, AI mới nhất, bóng đá V-League..."
+                                placeholder="e.g. gold price today, latest AI news, Premier League..."
                                 autocomplete="off">
                             <div class="input-highlight"></div>
                         </div>
@@ -97,9 +95,9 @@
 
                     <!-- AI parse preview -->
                     <div id="parse-preview" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);border-radius:10px;font-size:.85rem;">
-                        <div id="parse-loading" style="display:none;color:#a78bfa;"><i class="fa-solid fa-spinner fa-spin"></i> AI đang phân tích...</div>
+                        <div id="parse-loading" style="display:none;color:#a78bfa;"><i class="fa-solid fa-spinner fa-spin"></i> AI is analyzing...</div>
                         <div id="parse-ok" style="display:none;">
-                            <span style="color:#4ade80;font-weight:600;"><i class="fa-solid fa-circle-check"></i> AI hiểu:</span>
+                            <span style="color:#4ade80;font-weight:600;"><i class="fa-solid fa-circle-check"></i> AI understood:</span>
                             <span id="parse-text" style="color:#e2e8f0;margin-left:6px;"></span>
                             <div id="parse-keywords" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;"></div>
                         </div>
@@ -110,39 +108,39 @@
                     </div>
 
                     <div class="topic-chips">
-                        <span class="chip" data-topic="chính trị">🏛️ Chính trị</span>
-                        <span class="chip" data-topic="giáo dục">📚 Giáo dục</span>
-                        <span class="chip" data-topic="công nghệ">💻 Công nghệ</span>
-                        <span class="chip" data-topic="y tế">🏥 Y tế</span>
-                        <span class="chip" data-topic="kinh tế">💰 Kinh tế</span>
-                        <span class="chip" data-topic="thể thao">⚽ Thể thao</span>
-                        <span class="chip" data-topic="giải trí">🎬 Giải trí</span>
-                        <span class="chip" data-topic="thế giới">🌍 Thế giới</span>
-                        <span class="chip" data-topic="pháp luật">⚖️ Pháp luật</span>
-                        <span class="chip" data-topic="môi trường">🌿 Môi trường</span>
+                        <span class="chip" data-topic="politics">🏛️ Politics</span>
+                        <span class="chip" data-topic="education">📚 Education</span>
+                        <span class="chip" data-topic="technology">💻 Technology</span>
+                        <span class="chip" data-topic="health">🏥 Health</span>
+                        <span class="chip" data-topic="economy">💰 Economy</span>
+                        <span class="chip" data-topic="sports">⚽ Sports</span>
+                        <span class="chip" data-topic="entertainment">🎬 Entertainment</span>
+                        <span class="chip" data-topic="world">🌍 World</span>
+                        <span class="chip" data-topic="law">⚖️ Law</span>
+                        <span class="chip" data-topic="environment">🌿 Environment</span>
                     </div>
 
                     <div class="settings-row" style="margin-top:18px;">
                         <div class="input-group half">
-                            <label for="lang-select">Ngôn ngữ podcast</label>
+                            <label for="lang-select">Podcast Language</label>
                             <div class="select-field">
                                 <i class="fa-solid fa-globe icon-left"></i>
                                 <select id="lang-select">
-                                    <option value="vi">Tiếng Việt</option>
+                                    <option value="vi">Vietnamese</option>
                                     <option value="en">English</option>
-                                    <option value="fr">Tiếng Pháp (Français)</option>
-                                    <option value="ja">Tiếng Nhật (日本語)</option>
+                                    <option value="fr">French (Français)</option>
+                                    <option value="ja">Japanese (日本語)</option>
                                 </select>
                                 <i class="fa-solid fa-chevron-down icon-right"></i>
                             </div>
                         </div>
                         <div class="input-group half">
-                            <label for="voice-select">Giọng đọc</label>
+                            <label for="voice-select">Voice</label>
                             <div class="select-field">
                                 <i class="fa-solid fa-waveform-lines icon-left"></i>
                                 <select id="voice-select">
-                                    <option value="vi-VN-Neural2-A">Giọng Nữ (Miền Nam)</option>
-                                    <option value="vi-VN-Neural2-D">Giọng Nam (Miền Bắc)</option>
+                                    <option value="vi-VN-Neural2-A">Female Voice (Southern)</option>
+                                    <option value="vi-VN-Neural2-D">Male Voice (Northern)</option>
                                 </select>
                                 <i class="fa-solid fa-chevron-down icon-right"></i>
                             </div>
@@ -150,7 +148,7 @@
                     </div>
 
                     <button type="button" class="btn btn-primary btn-glow" id="generate-btn" style="margin-top:18px;">
-                        <span class="btn-text">Tạo Podcast Tin Tức</span>
+                        <span class="btn-text">Generate News Podcast</span>
                         <i class="fa-solid fa-wand-magic-sparkles"></i>
                         <div class="loader-spinner hidden" id="btn-loader"></div>
                     </button>
@@ -161,22 +159,22 @@
                     <div class="steps-wrapper glass-effect">
                         <div class="step pending" id="step-1">
                             <div class="step-icon-box"><i class="fa-solid fa-magnifying-glass"></i><div class="ring"></div></div>
-                            <div class="step-info"><h3>Tìm bài báo</h3><p class="status-text">Đang chờ...</p></div>
+                            <div class="step-info"><h3>Find Articles</h3><p class="status-text">Waiting...</p></div>
                         </div>
                         <div class="step-divider"></div>
                         <div class="step pending" id="step-2">
                             <div class="step-icon-box"><i class="fa-solid fa-spider"></i><div class="ring"></div></div>
-                            <div class="step-info"><h3>Crawl nội dung</h3><p class="status-text">Đang chờ...</p></div>
+                            <div class="step-info"><h3>Crawl Content</h3><p class="status-text">Waiting...</p></div>
                         </div>
                         <div class="step-divider"></div>
                         <div class="step pending" id="step-3">
                             <div class="step-icon-box"><i class="fa-solid fa-brain"></i><div class="ring"></div></div>
-                            <div class="step-info"><h3>AI tổng hợp</h3><p class="status-text">Đang chờ...</p></div>
+                            <div class="step-info"><h3>AI Synthesis</h3><p class="status-text">Waiting...</p></div>
                         </div>
                         <div class="step-divider"></div>
                         <div class="step pending" id="step-4">
                             <div class="step-icon-box"><i class="fa-solid fa-compact-disc"></i><div class="ring"></div></div>
-                            <div class="step-info"><h3>Tạo audio</h3><p class="status-text">Đang chờ...</p></div>
+                            <div class="step-info"><h3>Generate Audio</h3><p class="status-text">Waiting...</p></div>
                         </div>
                     </div>
                 </section>
@@ -186,24 +184,23 @@
                     <div class="audio-card" style="margin-bottom:18px;">
                         <div class="success-header" style="margin-bottom:6px;">
                             <div class="success-icon-wrapper"><i class="fa-solid fa-circle-check"></i></div>
-                            <h2 id="podcast-title" style="font-family:'Outfit',sans-serif;font-size:1.5rem;font-weight:700;color:#e2e8f0;margin:0 0 4px;">Podcast Đã Sẵn Sàng!</h2>
+                            <h2 id="podcast-title" style="font-family:'Outfit',sans-serif;font-size:1.5rem;font-weight:700;color:#e2e8f0;margin:0 0 4px;">Podcast Ready!</h2>
                         </div>
                         <span id="topic-tag" style="display:inline-block;font-size:.78rem;background:rgba(139,92,246,.18);color:#a78bfa;padding:3px 10px;border-radius:10px;font-weight:600;"></span>
                         <audio id="audio-player" controls preload="metadata"></audio>
                         <div class="action-row">
-                            <a href="#" id="download-btn" class="btn btn-secondary" download><i class="fa-solid fa-download"></i> Tải MP3</a>
-                            <button id="save-btn" class="btn btn-secondary" style="background:#5b21b6;color:#fff;border:none;"><i class="fa-solid fa-bookmark"></i> Lưu vào thư viện</button>
-                            <button id="reset-btn" class="btn btn-outline"><i class="fa-solid fa-rotate-left"></i> Tạo mới</button>
+                            <a href="#" id="download-btn" class="btn btn-secondary" download><i class="fa-solid fa-download"></i> Download MP3</a>
+                            <button id="reset-btn" class="btn btn-outline"><i class="fa-solid fa-rotate-left"></i> Start Over</button>
                         </div>
                     </div>
 
                     <div class="result-grid-2">
                         <div class="card glass-effect" style="padding:20px;">
-                            <div class="sec-label"><i class="fa-solid fa-newspaper"></i> Nguồn tin tức (<span id="article-count">0</span> bài)</div>
+                            <div class="sec-label"><i class="fa-solid fa-newspaper"></i> News Sources (<span id="article-count">0</span> articles)</div>
                             <div class="article-list" id="article-list"></div>
                         </div>
                         <div class="card glass-effect" style="padding:20px;">
-                            <div class="sec-label"><i class="fa-solid fa-file-lines"></i> Tóm tắt nội dung</div>
+                            <div class="sec-label"><i class="fa-solid fa-file-lines"></i> Content Summary</div>
                             <div class="text-box" id="summary-box"></div>
                         </div>
                     </div>
@@ -212,12 +209,12 @@
                         <div class="card glass-effect" style="padding:20px;">
                             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                                 <div class="sec-label" style="margin-bottom:0;cursor:pointer;" id="script-toggle">
-                                    <i class="fa-solid fa-scroll"></i> Script Podcast
+                                    <i class="fa-solid fa-scroll"></i> Podcast Script
                                     <i class="fa-solid fa-chevron-down" id="script-chevron" style="margin-left:4px;transition:transform .2s;"></i>
                                 </div>
                                 <div class="tab-group" id="script-tabs" style="display:none;">
-                                    <button type="button" class="tab-btn active" id="tab-translated">VI</button>
-                                    <button type="button" class="tab-btn" id="tab-original">Tiếng Việt</button>
+                                    <button type="button" class="tab-btn active" id="tab-translated">Translated</button>
+                                    <button type="button" class="tab-btn" id="tab-original">Original</button>
                                 </div>
                             </div>
                             <div class="text-box" id="script-box" style="max-height:340px;"></div>
@@ -226,16 +223,16 @@
                             <div class="chat-wrap">
                                 <div class="chat-header">
                                     <i class="fa-solid fa-robot" style="color:#a78bfa;font-size:1rem;"></i>
-                                    <h4 style="margin:0;font-size:.95rem;font-weight:600;color:#e2e8f0;">Hỏi AI về tin tức này</h4>
+                                    <h4 style="margin:0;font-size:.95rem;font-weight:600;color:#e2e8f0;">Ask AI about this news</h4>
                                 </div>
                                 <div class="chat-messages" id="chat-messages">
                                     <div class="chat-msg">
                                         <div class="chat-avatar ai"><i class="fa-solid fa-robot"></i></div>
-                                        <div class="chat-bubble ai">Chào bạn! Tôi đã đọc xong các bài báo. Bạn muốn hỏi gì?</div>
+                                        <div class="chat-bubble ai">Hi! I've finished reading the articles. What would you like to know?</div>
                                     </div>
                                 </div>
                                 <div class="chat-input-row">
-                                    <input type="text" id="chat-input" placeholder="Hỏi về nội dung tin tức...">
+                                    <input type="text" id="chat-input" placeholder="Ask about the news content...">
                                     <button class="chat-send-btn" id="chat-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
                                 </div>
                             </div>
@@ -248,19 +245,19 @@
 
     <div class="toast-notification hidden" id="error-toast">
         <div class="toast-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div class="toast-content"><h4>Lỗi</h4><p id="error-msg">Đã xảy ra lỗi.</p></div>
+        <div class="toast-content"><h4>Error</h4><p id="error-msg">Something went wrong.</p></div>
         <button class="close-toast" id="close-toast-btn"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <div id="sel-tooltip"><i class="fa-solid fa-book-open"></i> Giải thích</div>
+    <div id="sel-tooltip"><i class="fa-solid fa-book-open"></i> Explain</div>
 
     <div id="explain-popup">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <span style="font-size:.72rem;color:#a78bfa;font-weight:700;"><i class="fa-solid fa-book-open"></i> Giải thích</span>
+            <span style="font-size:.72rem;color:#a78bfa;font-weight:700;"><i class="fa-solid fa-book-open"></i> Explain</span>
             <button id="ep-close" style="background:none;border:none;color:#666;cursor:pointer;font-size:1rem;padding:0;"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div id="ep-word" style="font-size:1.05rem;font-weight:700;color:#e2e8f0;margin-bottom:10px;"></div>
-        <div id="ep-loading" style="text-align:center;padding:8px;color:#a78bfa;"><i class="fa-solid fa-spinner fa-spin"></i> Đang giải thích...</div>
+        <div id="ep-loading" style="text-align:center;padding:8px;color:#a78bfa;"><i class="fa-solid fa-spinner fa-spin"></i> Explaining...</div>
         <div id="ep-content" style="display:none;">
             <div id="ep-meaning" style="font-size:.88rem;color:#cbd5e1;line-height:1.6;margin-bottom:6px;"></div>
             <div id="ep-example" style="font-size:.81rem;color:#94a3b8;font-style:italic;border-left:2px solid #7c3aed;padding-left:8px;"></div>
