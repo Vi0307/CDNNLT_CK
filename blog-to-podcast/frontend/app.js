@@ -1,20 +1,56 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // DOM Elements
+    // --- DOM Elements ---
     const form = document.getElementById('convert-form');
     const urlInput = document.getElementById('url-input');
     const langSelect = document.getElementById('language-select');
     const voiceSelect = document.getElementById('voice-select');
     const submitBtn = document.getElementById('submit-btn');
     const btnText = submitBtn.querySelector('.btn-text');
-    const btnIcon = submitBtn.querySelector('i');
+    const btnIcon = submitBtn.querySelector('.fa-arrow-right');
     const btnLoader = document.getElementById('btn-loader');
 
-    const formContainer = document.getElementById('form-container');
-    const progressContainer = document.getElementById('progress-container');
-    const resultContainer = document.getElementById('result-container');
+    // Panel States
+    const stateGenerating = document.getElementById('state-generating');
+    const stateResult = document.getElementById('state-result');
 
-    // Voice mapping based on language
+    // Generating Steps
+    const step1 = document.getElementById('step-1');
+    const step2 = document.getElementById('step-2');
+    const step3 = document.getElementById('step-3');
+
+    // Audio Player & Controls
+    const audioPlayer = document.getElementById('audio-player');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const playPauseIcon = playPauseBtn.querySelector('i');
+    const waveformContainer = document.getElementById('waveform-container');
+    const waveformProgress = document.getElementById('waveform-progress');
+    const timeDisplay = document.getElementById('time-display');
+
+    const downloadBtn = document.getElementById('download-btn');
+    const resetBtn = document.getElementById('reset-btn');
+
+    // UI Result Elements
+    const resultTitle = document.getElementById('result-title');
+    const resultVoiceName = document.getElementById('result-voice-name');
+    const dynamicSummaryContent = document.getElementById('dynamic-summary-content');
+    const tabOriginal = document.getElementById('tab-original');
+    const tabTranslated = document.getElementById('tab-translated');
+
+    // Trending Chips
+    const trendingChips = document.querySelectorAll('.topic-chip');
+
+    // Chat
+    const chatMessages = document.getElementById('chat-messages');
+    const chatInput = document.getElementById('chat-input');
+    const sendChatBtn = document.getElementById('send-chat-btn');
+
+    // Toast
+    const errorToast = document.getElementById('error-toast');
+    const errorMsg = document.getElementById('error-msg');
+    const closeToastBtn = document.getElementById('close-toast-btn');
+
+    // --- Voice Mapping ---
     const voiceMap = {
         'vi': [
             { value: 'vi-VN-Neural2-A', label: 'Female Voice (Southern)' },
@@ -50,34 +86,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (langSelect && voiceSelect) {
         langSelect.addEventListener('change', updateVoiceOptions);
-        updateVoiceOptions(); // Set initial options
+        updateVoiceOptions();
     }
 
-    // Steps
-    const step1 = document.getElementById('step-1');
-    const step2 = document.getElementById('step-2');
-    const step3 = document.getElementById('step-3');
+    // --- Trending Chips Fill ---
+    trendingChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            urlInput.value = `https://example.com/topic/${chip.textContent.toLowerCase().replace(/\s+/g, '-')}`;
+            urlInput.focus();
+        });
+    });
 
-    // Audio Player
-    const audioPlayer = document.getElementById('audio-player');
-    const downloadBtn = document.getElementById('download-btn');
-    const resetBtn = document.getElementById('reset-btn');
-
-    // New AI UI Elements
-    const dynamicSummaryContent = document.getElementById('dynamic-summary-content');
-    const tabOriginal = document.getElementById('tab-original');
-    const tabTranslated = document.getElementById('tab-translated');
+    // --- State Management ---
+    function switchState(targetState) {
+        // Only active class will show thanks to CSS
+        [stateGenerating, stateResult].forEach(el => {
+            if (!el) return;
+            if (targetState && el === targetState) {
+                el.classList.remove('hidden');
+                // Use a tiny timeout to allow display:flex to apply before setting opacity
+                setTimeout(() => el.classList.add('active'), 10);
+            } else {
+                el.classList.remove('active');
+                setTimeout(() => el.classList.add('hidden'), 500); // Wait for fade out
+            }
+        });
+    }
 
     let currentOriginalSummary = '';
     let currentTranslatedSummary = '';
     let currentOriginalHTML = '';
     let currentTranslatedHTML = '';
     let activeTab = 'original';
-    let rawArticleText = '';   // nội dung bài báo gốc từ crawl
+    let rawArticleText = '';
 
     function prepareHighlightableText(text) {
         if (!text) return '';
-        // Phân tách theo câu (kết thúc bằng .!? theo sau là khoảng trắng hoặc xuống dòng)
         const tokens = text.match(/[\s\S]*?(?:[.!?]+(?=\s|$)|\n|$)[\s]*/g).filter(t => t.length > 0);
         let html = '';
         let charIndex = 0;
@@ -88,92 +132,142 @@ document.addEventListener('DOMContentLoaded', () => {
         return html;
     }
 
-    // Tab switching logic
     if (tabOriginal && tabTranslated && dynamicSummaryContent) {
         tabOriginal.addEventListener('click', () => {
             activeTab = 'original';
-            tabOriginal.style.background = 'var(--primary-color)';
-            tabOriginal.style.color = 'white';
-            tabTranslated.style.background = 'transparent';
-            tabTranslated.style.color = 'var(--text-secondary)';
-            
-            if (currentOriginalHTML) {
-                dynamicSummaryContent.innerHTML = `<p>${currentOriginalHTML}</p>`;
-            } else {
-                dynamicSummaryContent.innerHTML = `<p>Original language summary not available.</p>`;
-            }
+            tabOriginal.classList.add('active');
+            tabTranslated.classList.remove('active');
+            dynamicSummaryContent.innerHTML = currentOriginalHTML ? `<p>${currentOriginalHTML}</p>` : `<p>Summary not available.</p>`;
         });
 
         tabTranslated.addEventListener('click', () => {
             activeTab = 'translated';
-            tabTranslated.style.background = 'var(--primary-color)';
-            tabTranslated.style.color = 'white';
-            tabOriginal.style.background = 'transparent';
-            tabOriginal.style.color = 'var(--text-secondary)';
+            tabTranslated.classList.add('active');
+            tabOriginal.classList.remove('active');
+            dynamicSummaryContent.innerHTML = currentTranslatedHTML ? `<p>${currentTranslatedHTML}</p>` : `<p>Translation not available.</p>`;
+        });
+    }
+
+    // --- Waveform & Audio Player Logic ---
+    const NUM_BARS = 60;
+    
+    // Generate dummy bars for UI
+    function generateWaveformBars() {
+        waveformContainer.innerHTML = '<div class="waveform-progress" id="waveform-progress"></div>';
+        const prog = document.getElementById('waveform-progress');
+        for (let i = 0; i < NUM_BARS; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'waveform-bar';
+            // Random height between 20% and 100%
+            const height = 20 + Math.random() * 80;
+            bar.style.height = `${height}%`;
+            waveformContainer.appendChild(bar);
+        }
+    }
+    generateWaveformBars();
+
+    let animationId;
+    
+    playPauseBtn.addEventListener('click', () => {
+        if (audioPlayer.paused) {
+            audioPlayer.play();
+        } else {
+            audioPlayer.pause();
+        }
+    });
+
+    audioPlayer.addEventListener('play', () => {
+        playPauseIcon.className = 'fa-solid fa-pause';
+        animateWaveform();
+    });
+
+    audioPlayer.addEventListener('pause', () => {
+        playPauseIcon.className = 'fa-solid fa-play';
+        cancelAnimationFrame(animationId);
+    });
+
+    audioPlayer.addEventListener('ended', () => {
+        playPauseIcon.className = 'fa-solid fa-play';
+        cancelAnimationFrame(animationId);
+        document.getElementById('waveform-progress').style.width = '0%';
+    });
+
+    function formatTime(seconds) {
+        if (isNaN(seconds)) return '0:00';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    audioPlayer.addEventListener('timeupdate', () => {
+        if (!audioPlayer.duration) return;
+        const progress = audioPlayer.currentTime / audioPlayer.duration;
+        
+        // Update waveform progress overlay
+        const progEl = document.getElementById('waveform-progress');
+        if (progEl) progEl.style.width = `${progress * 100}%`;
+        
+        // Update time display
+        timeDisplay.textContent = `${formatTime(audioPlayer.currentTime)} / ${formatTime(audioPlayer.duration)}`;
+
+        // Sync text highlight
+        const activeText = activeTab === 'original' ? currentOriginalSummary : currentTranslatedSummary;
+        if (!activeText) return;
+        
+        const targetCharIndex = progress * activeText.length;
+        const spans = dynamicSummaryContent.querySelectorAll('.highlightable-word');
+        let currentHighlighted = null;
+        
+        spans.forEach(span => {
+            const start = parseInt(span.getAttribute('data-start'));
+            const end = parseInt(span.getAttribute('data-end'));
             
-            if (currentTranslatedHTML) {
-                dynamicSummaryContent.innerHTML = `<p>${currentTranslatedHTML}</p>`;
+            if (targetCharIndex >= start && targetCharIndex <= end) {
+                span.classList.add('active');
+                currentHighlighted = span;
             } else {
-                dynamicSummaryContent.innerHTML = `<p>Translated language summary not available.</p>`;
+                span.classList.remove('active');
             }
         });
-    }
+        
+        if (currentHighlighted) {
+            const containerRect = dynamicSummaryContent.getBoundingClientRect();
+            const spanRect = currentHighlighted.getBoundingClientRect();
+            if (spanRect.bottom > containerRect.bottom || spanRect.top < containerRect.top) {
+                dynamicSummaryContent.scrollTop += (spanRect.top - containerRect.top) - (containerRect.height / 2);
+            }
+        }
+    });
 
-    // Audio highlight sync
-    if (audioPlayer && dynamicSummaryContent) {
-        audioPlayer.addEventListener('timeupdate', () => {
-            if (!audioPlayer.duration || audioPlayer.paused) return;
-            const progress = audioPlayer.currentTime / audioPlayer.duration;
-            
-            const activeText = activeTab === 'original' ? currentOriginalSummary : currentTranslatedSummary;
-            if (!activeText) return;
-            
-            const targetCharIndex = progress * activeText.length;
-            const spans = dynamicSummaryContent.querySelectorAll('.highlightable-word');
-            let currentHighlighted = null;
-            
-            spans.forEach(span => {
-                const start = parseInt(span.getAttribute('data-start'));
-                const end = parseInt(span.getAttribute('data-end'));
-                
-                if (targetCharIndex >= start && targetCharIndex <= end) {
-                    span.style.backgroundColor = '#ffd54f'; // Yellow highlight
-                    span.style.color = '#000';
-                    span.style.borderRadius = '3px';
-                    span.classList.add('active');
-                    currentHighlighted = span;
-                } else {
-                    span.style.backgroundColor = 'transparent';
-                    span.style.color = 'inherit';
-                    span.classList.remove('active');
-                }
-            });
-            
-            // Tự động cuộn đến từ đang đọc nếu nó ra ngoài vùng nhìn thấy
-            if (currentHighlighted) {
-                const containerRect = dynamicSummaryContent.getBoundingClientRect();
-                const spanRect = currentHighlighted.getBoundingClientRect();
-                if (spanRect.bottom > containerRect.bottom || spanRect.top < containerRect.top) {
-                    dynamicSummaryContent.scrollTop += (spanRect.top - containerRect.top) - (containerRect.height / 2);
-                }
+    audioPlayer.addEventListener('loadedmetadata', () => {
+        timeDisplay.textContent = `0:00 / ${formatTime(audioPlayer.duration)}`;
+    });
+
+    // Click on waveform to seek
+    waveformContainer.addEventListener('click', (e) => {
+        if (!audioPlayer.duration) return;
+        const rect = waveformContainer.getBoundingClientRect();
+        const pos = (e.clientX - rect.left) / rect.width;
+        audioPlayer.currentTime = pos * audioPlayer.duration;
+    });
+
+    function animateWaveform() {
+        // Subtle random dance for the bars when playing
+        const bars = waveformContainer.querySelectorAll('.waveform-bar');
+        bars.forEach((bar, index) => {
+            // Only animate occasionally to save CPU, and give it a pulsing feel
+            if (Math.random() > 0.8) {
+                const newHeight = 30 + Math.random() * 70;
+                bar.style.height = `${newHeight}%`;
             }
         });
+        animationId = requestAnimationFrame(animateWaveform);
     }
 
-    const chatMessages = document.getElementById('chat-messages');
-    const chatInput = document.getElementById('chat-input');
-    const sendChatBtn = document.getElementById('send-chat-btn');
-
-    // Toast
-    const errorToast = document.getElementById('error-toast');
-    const errorMsg = document.getElementById('error-msg');
-    const closeToastBtn = document.getElementById('close-toast-btn');
-
-    // ── API: chỉ 1 endpoint duy nhất qua Gateway ──────────────────────
+    // --- API & Processing ---
     const GATEWAY_URL = 'http://localhost:8000';
     const CONVERT_URL = `${GATEWAY_URL}/convert`;
 
-    // ── Submit ─────────────────────────────────────────────────────────
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -189,28 +283,29 @@ document.addEventListener('DOMContentLoaded', () => {
         startProcessUI();
 
         try {
-            // Hiển thị các bước đang chạy tuần tự (UI feedback)
-            updateStep(step1, 'active', 'Loading content...');
+            // Wait a tiny bit for UI to transition
+            await new Promise(r => setTimeout(r, 500));
+            updateStep(step1, 'active');
 
-            // Gọi 1 request duy nhất — gateway xử lý toàn bộ pipeline
             const result = await fetchApi(CONVERT_URL, {
                 url:      url,
                 language: lang,
                 voice:    voice,
-            }, (progressEvent) => {
-                // Không có streaming, nhưng ta giả lập bước UI sau 2s và 5s
             });
 
-            updateStep(step1, 'done', 'Hoàn tất');
-            updateStep(step2, 'done', 'Hoàn tất');
-            updateStep(step3, 'done', 'Hoàn tất');
+            updateStep(step1, 'done');
+            updateStep(step2, 'done');
+            updateStep(step3, 'done');
 
             if (!result.audio_url) throw new Error('Audio generation failed.');
 
-            // Lưu nội dung bài báo gốc để dùng cho Q&A
             rawArticleText = result.raw_text || '';
+            
+            // Extract domain for title placeholder
+            let domain = 'Article';
+            try { domain = new URL(url).hostname.replace('www.', ''); } catch(e){}
 
-            showResult(result.audio_url, result.script, result.original_script);
+            showResult(result.audio_url, result.script, result.original_script, domain, voiceSelect.options[voiceSelect.selectedIndex].text);
 
         } catch (error) {
             console.error('Pipeline Error:', error);
@@ -218,27 +313,99 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Giả lập tiến trình bước UI trong khi chờ gateway (UX)
-    function animateSteps() {
-        return new Promise((resolve) => {
-            setTimeout(() => updateStep(step1, 'active', 'Loading content...'), 0);
-            setTimeout(() => {
-                updateStep(step1, 'done', 'Done');
-                updateStep(step2, 'active', 'Writing script...');
-            }, 3000);
-            setTimeout(() => {
-                updateStep(step2, 'done', 'Done');
-                updateStep(step3, 'active', 'Synthesizing voice...');
-                resolve();
-            }, 8000);
-        });
+    function startProcessUI() {
+        submitBtn.disabled = true;
+        btnText.style.display = 'none';
+        btnIcon.style.display = 'none';
+        btnLoader.classList.remove('hidden');
+        document.getElementById('main-right-panel').classList.remove('hidden');
+
+        switchState(stateGenerating);
+
+        // Simulated steps UX
+        updateStep(step1, 'active');
+        setTimeout(() => {
+            if (stateGenerating.classList.contains('active')) {
+                updateStep(step1, 'done');
+                updateStep(step2, 'active');
+            }
+        }, 4000);
+        setTimeout(() => {
+            if (stateGenerating.classList.contains('active')) {
+                updateStep(step2, 'done');
+                updateStep(step3, 'active');
+            }
+        }, 10000);
     }
 
-    // ── Reset ──────────────────────────────────────────────────────────
-    resetBtn.addEventListener('click', () => {
-        resultContainer.classList.add('hidden');
-        progressContainer.classList.add('hidden');
-        formContainer.classList.remove('hidden');
+    function updateStep(stepEl, status) {
+        stepEl.className = `p-step ${status}`;
+    }
+
+    function handlePipelineError(msg) {
+        showError(msg);
+        
+        setTimeout(() => {
+            resetUI();
+        }, 3000);
+    }
+
+    function showResult(audioPath, summaryText, originalSummaryText, domain, voiceName) {
+        // Complete steps visually
+        updateStep(step1, 'done');
+        updateStep(step2, 'done');
+        updateStep(step3, 'done');
+
+        setTimeout(() => {
+            switchState(stateResult);
+
+            // Setup Data
+            resultTitle.textContent = `${domain} Podcast`;
+            resultVoiceName.textContent = voiceName;
+
+            const fullAudioUrl = `${GATEWAY_URL}${audioPath}?t=${Date.now()}`;
+            audioPlayer.pause();
+            audioPlayer.removeAttribute('src');
+            audioPlayer.load();
+            audioPlayer.src = fullAudioUrl;
+            audioPlayer.load();
+            downloadBtn.href = fullAudioUrl;
+            
+            currentOriginalSummary = originalSummaryText || '';
+            currentTranslatedSummary = summaryText || '';
+            currentContext = currentOriginalSummary || currentTranslatedSummary; 
+            currentOriginalHTML = prepareHighlightableText(currentOriginalSummary);
+            currentTranslatedHTML = prepareHighlightableText(currentTranslatedSummary);
+
+            if (tabOriginal) {
+                tabOriginal.click();
+            }
+            
+            // Reset chat
+            chatMessages.innerHTML = `
+                <div class="message ai-message">
+                    <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="msg-bubble">
+                        Podcast is ready! Ask me anything about the content.
+                    </div>
+                </div>
+            `;
+            
+            // Generate new random bars
+            generateWaveformBars();
+
+            // Reset submit button
+            submitBtn.disabled = false;
+            btnText.style.display = 'block';
+            btnIcon.style.display = 'block';
+            btnLoader.classList.add('hidden');
+
+        }, 1000);
+    }
+
+    function resetUI() {
+        switchState(null);
+        document.getElementById('main-right-panel').classList.add('hidden');
 
         urlInput.value = '';
         rawArticleText = '';
@@ -248,22 +415,15 @@ document.addEventListener('DOMContentLoaded', () => {
         btnIcon.style.display = 'block';
         btnLoader.classList.add('hidden');
 
-        [step1, step2, step3].forEach(step => {
-            step.className = 'step pending';
-            step.querySelector('.status-text').textContent = 'Waiting...';
-        });
+        [step1, step2, step3].forEach(step => updateStep(step, ''));
 
         audioPlayer.pause();
         audioPlayer.src = '';
-    });
+        playPauseIcon.className = 'fa-solid fa-play';
+        cancelAnimationFrame(animationId);
+    }
 
-    // ── Close Toast ────────────────────────────────────────────────────
-    closeToastBtn.addEventListener('click', () => {
-        errorToast.classList.remove('show');
-        errorToast.classList.add('hidden');
-    });
-
-    // ── Helpers ────────────────────────────────────────────────────────
+    resetBtn.addEventListener('click', resetUI);
 
     async function fetchApi(url, body) {
         const response = await fetch(url, {
@@ -280,114 +440,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return await response.json();
     }
 
-    function startProcessUI() {
-        submitBtn.disabled = true;
-        btnText.style.display = 'none';
-        btnIcon.style.display = 'none';
-        btnLoader.classList.remove('hidden');
-
-        formContainer.classList.add('hidden');
-        progressContainer.classList.remove('hidden');
-
-        // Animate steps while waiting for gateway response
-        updateStep(step1, 'active', 'Loading content...');
-        setTimeout(() => {
-            if (document.querySelector('.step.active') === step1) {
-                updateStep(step1, 'done', 'Done');
-                updateStep(step2, 'active', 'Writing script...');
-            }
-        }, 4000);
-        setTimeout(() => {
-            if (document.querySelector('.step.active') === step2) {
-                updateStep(step2, 'done', 'Done');
-                updateStep(step3, 'active', 'Synthesizing voice...');
-            }
-        }, 10000);
-    }
-
-    function updateStep(stepEl, status, message) {
-        stepEl.className = `step ${status}`;
-        stepEl.querySelector('.status-text').textContent = message;
-    }
-
-    function handlePipelineError(msg) {
-        const activeStep = document.querySelector('.step.active');
-        if (activeStep) updateStep(activeStep, 'error', 'Thất bại');
-
-        showError(msg);
-
-        setTimeout(() => {
-            submitBtn.disabled = false;
-            btnText.style.display = 'block';
-            btnIcon.style.display = 'block';
-            btnLoader.classList.add('hidden');
-            formContainer.classList.remove('hidden');
-            progressContainer.classList.add('hidden');
-
-            [step1, step2, step3].forEach(step => {
-                step.className = 'step pending';
-                step.querySelector('.status-text').textContent = 'Waiting...';
-            });
-        }, 3000);
-    }
-
-    function showResult(audioPath, summaryText, originalSummaryText) {
-        // Đảm bảo tất cả steps đều done trước khi hiện kết quả
-        updateStep(step1, 'done', 'Done');
-        updateStep(step2, 'done', 'Done');
-        updateStep(step3, 'done', 'Done');
-
-        setTimeout(() => {
-            progressContainer.classList.add('hidden');
-            resultContainer.classList.remove('hidden');
-
-            // audio_url dạng /download/<filename> — proxy qua gateway.
-            // Thêm cache-buster và ép audio.load() để tránh browser phát lại file cũ.
-            const fullAudioUrl = `${GATEWAY_URL}${audioPath}?t=${Date.now()}`;
-            audioPlayer.pause();
-            audioPlayer.removeAttribute('src');
-            audioPlayer.load();
-            audioPlayer.src = fullAudioUrl;
-            audioPlayer.load();
-            downloadBtn.href = fullAudioUrl;
-            
-            // Update Summary
-            currentOriginalSummary = originalSummaryText || '';
-            currentTranslatedSummary = summaryText || '';
-            currentContext = currentOriginalSummary || currentTranslatedSummary;  // dùng làm context cho explain
-            currentOriginalHTML = prepareHighlightableText(currentOriginalSummary);
-            currentTranslatedHTML = prepareHighlightableText(currentTranslatedSummary);
-
-            // Mặc định chọn tab ngôn ngữ gốc khi có kết quả
-            if (tabOriginal) {
-                tabOriginal.click();
-            } else if (dynamicSummaryContent) {
-                dynamicSummaryContent.innerHTML = `<p>${currentOriginalHTML}</p>`;
-            }
-            
-            // Reset chat
-            chatMessages.innerHTML = `
-                <div class="message ai-message">
-                    <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
-                    <div class="message-bubble">
-                        Hi there! I'm your AI assistant. Do you have any questions about this podcast?
-                    </div>
-                </div>
-            `;
-        }, 1000);
-    }
-
     function showError(msg) {
         errorMsg.textContent = msg;
         errorToast.classList.remove('hidden');
-        errorToast.classList.add('show');
+        // small timeout to allow display:flex to apply
+        setTimeout(() => errorToast.classList.add('show'), 10);
         setTimeout(() => {
             errorToast.classList.remove('show');
-            errorToast.classList.add('hidden');
+            setTimeout(() => errorToast.classList.add('hidden'), 400);
         }, 5000);
     }
 
-    // ── Explain Term (highlight → tooltip → popup) ────────────────────
+    closeToastBtn.addEventListener('click', () => {
+        errorToast.classList.remove('show');
+        setTimeout(() => errorToast.classList.add('hidden'), 400);
+    });
+
+    // --- Explain Term Tooltip & Popup ---
     const selectionTooltip = document.getElementById('selection-tooltip');
     const explainPopup     = document.getElementById('explain-popup');
     const explainPopupWord = document.getElementById('explain-popup-word');
@@ -398,11 +467,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const explainError     = document.getElementById('explain-error');
     const explainClose     = document.getElementById('explain-popup-close');
 
-    let currentContext = '';  // lưu summary text hiện tại để làm context
+    let currentContext = '';
 
-    // Khi user bôi text trong summary → hiện tooltip "Giải thích"
     document.addEventListener('mouseup', (e) => {
-        // Bỏ qua nếu click vào popup/tooltip
         if (explainPopup.contains(e.target) || selectionTooltip.contains(e.target)) return;
 
         const selection = window.getSelection();
@@ -413,7 +480,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Chỉ hiện khi bôi trong vùng summary
         const summaryEl = document.getElementById('dynamic-summary-content');
         if (!summaryEl) return;
         const range = selection.getRangeAt(0);
@@ -422,7 +488,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Hiện tooltip gần vị trí bôi
         const rect = range.getBoundingClientRect();
         selectionTooltip.style.display = 'block';
         selectionTooltip.style.left = `${rect.left + rect.width / 2 - selectionTooltip.offsetWidth / 2}px`;
@@ -430,7 +495,6 @@ document.addEventListener('DOMContentLoaded', () => {
         selectionTooltip.dataset.word = selectedText;
     });
 
-    // Click tooltip → gọi API giải thích
     selectionTooltip.addEventListener('click', async () => {
         const word = selectionTooltip.dataset.word;
         if (!word) return;
@@ -438,12 +502,13 @@ document.addEventListener('DOMContentLoaded', () => {
         selectionTooltip.style.display = 'none';
         window.getSelection()?.removeAllRanges();
 
-        // Hiện popup ở giữa màn hình
         explainPopupWord.textContent = `"${word}"`;
         explainLoading.style.display = 'block';
         explainContent.style.display = 'none';
         explainError.style.display   = 'none';
         explainPopup.style.display   = 'block';
+        
+        // Center popup in view
         explainPopup.style.left = `${window.innerWidth / 2 - 160}px`;
         explainPopup.style.top  = `${window.innerHeight / 2 - 100 + window.scrollY}px`;
 
@@ -456,8 +521,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!res.ok) throw new Error(`Error ${res.status}`);
             const data = await res.json();
 
-            explainMeaning.innerHTML = `<strong>Meaning:</strong> ${data.meaning || '—'}`;
-            explainExample.innerHTML = data.example ? `Example: ${data.example}` : '';
+            explainMeaning.innerHTML = `<strong>Definition:</strong> ${data.meaning || '—'}`;
+            explainExample.innerHTML = data.example ? `"${data.example}"` : '';
             explainLoading.style.display = 'none';
             explainContent.style.display = 'block';
         } catch (err) {
@@ -467,7 +532,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Đóng popup
     explainClose.addEventListener('click', () => { explainPopup.style.display = 'none'; });
     document.addEventListener('mousedown', (e) => {
         if (!explainPopup.contains(e.target) && !selectionTooltip.contains(e.target)) {
@@ -478,79 +542,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ── buildContext: cắt thông minh theo từ khóa câu hỏi ───────────────
-    function buildContext(text, question) {
-        if (!text) return '';
-        const MAX_TOTAL   = 4500;
-        const HEAD_SIZE   = 500;
-        const KEYWORD_MAX = 2000;
-        const TAIL_SIZE   = 300;
-
-        const STOPWORDS = new Set(['là','và','có','không','của','trong','về','để','cho',
-            'với','các','một','những','này','đó','được','từ','theo','khi','hay','hoặc',
-            'thì','mà','nên','vì','do','bởi','tại','ra','vào','lên','xuống','đã','sẽ',
-            'đang','rất','cũng','còn','đây','kia','như','hơn','nhất','bao','nhiêu']);
-
-        // Tách từ khóa quan trọng từ câu hỏi
-        const keywords = question.toLowerCase()
-            .replace(/[?!.,;:]/g, ' ')
-            .split(/\s+/)
-            .filter(w => w.length > 1 && !STOPWORDS.has(w));
-
-        if (keywords.length === 0) {
-            // Fallback: 2000 đầu + 1000 cuối
-            if (text.length <= MAX_TOTAL) return text;
-            return text.slice(0, 2000) + '\n...\n' + text.slice(-1000);
-        }
-
-        // Tách đoạn
-        const paragraphs = text.split(/\n\n|\n/).filter(p => p.trim().length > 0);
-
-        // Phần đầu cố định
-        const head = text.slice(0, HEAD_SIZE);
-        // Phần cuối cố định
-        const tail = text.length > HEAD_SIZE + TAIL_SIZE
-            ? text.slice(-TAIL_SIZE)
-            : '';
-
-        // Tìm đoạn chứa từ khóa
-        const matchedParagraphs = [];
-        let keywordChars = 0;
-        for (const para of paragraphs) {
-            const lower = para.toLowerCase();
-            const hasKeyword = keywords.some(kw => lower.includes(kw));
-            if (hasKeyword && keywordChars < KEYWORD_MAX) {
-                matchedParagraphs.push(para);
-                keywordChars += para.length;
-            }
-        }
-
-        // Ghép lại
-        const parts = [];
-        parts.push(head);
-        if (matchedParagraphs.length > 0) {
-            const keywordSection = matchedParagraphs.join('\n');
-            // Tránh trùng với head/tail
-            if (!head.includes(keywordSection.slice(0, 50))) {
-                parts.push(keywordSection);
-            }
-        }
-        if (tail && !head.includes(tail.slice(0, 50))) {
-            parts.push(tail);
-        }
-
-        let result = parts.join('\n...\n');
-        if (result.length > MAX_TOTAL) {
-            result = result.slice(0, MAX_TOTAL);
-        }
-        return result;
-    }
-
-    // ── AI Chat Logic ──────────────────────────────────────────────────
+    // --- AI Chat ---
     sendChatBtn.addEventListener('click', sendChatMessage);
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendChatMessage();
     });
+
+    function buildContext(text, question) {
+        if (!text) return '';
+        const MAX_TOTAL = 4500;
+        return text.length > MAX_TOTAL ? text.slice(0, MAX_TOTAL) : text; // Simplified for speed
+    }
 
     function sendChatMessage() {
         const text = chatInput.value.trim();
@@ -559,7 +561,6 @@ document.addEventListener('DOMContentLoaded', () => {
         addChatMessage(text, 'user-message');
         chatInput.value = '';
 
-        // Hiện loading
         const loadingId = 'loading-' + Date.now();
         addChatMessage('...', 'ai-message loading', loadingId);
 
@@ -568,31 +569,17 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 question: text,
-                // Ưu tiên 1: nội dung gốc; Ưu tiên 2: summary+script
                 context: buildContext(rawArticleText || currentContext, text),
                 language: langSelect ? langSelect.value : 'vi'
             }),
         })
         .then(r => r.json())
         .then(data => {
-            // Xóa loading
             const loadingEl = document.getElementById(loadingId);
             if (loadingEl) loadingEl.remove();
 
             const answer = data.answer || 'No answer available.';
-            const source = data.source || '';
-            const confidence = data.confidence || 'low';
-
-            const confidenceColor = confidence === 'high' ? '#4ade80' : confidence === 'medium' ? '#fbbf24' : '#94a3b8';
-            const confidenceLabel = confidence === 'high' ? 'Confident' : confidence === 'medium' ? 'Fairly confident' : 'Uncertain';
-
-            let html = `<div>${answer}</div>`;
-            if (source) {
-                html += `<div style="margin-top:8px; font-size:0.82rem; color:#94a3b8; border-left:2px solid #a78bfa; padding-left:8px; font-style:italic;">"${source}"</div>`;
-            }
-            html += `<div style="margin-top:6px; font-size:0.75rem; color:${confidenceColor};">● ${confidenceLabel}</div>`;
-
-            addChatMessageHTML(html, 'ai-message');
+            addChatMessage(answer, 'ai-message');
         })
         .catch(err => {
             const loadingEl = document.getElementById(loadingId);
@@ -607,31 +594,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (id) msgDiv.id = id;
         
         const avatarDiv = document.createElement('div');
-        avatarDiv.className = 'message-avatar';
+        avatarDiv.className = 'msg-avatar';
         avatarDiv.innerHTML = type.includes('user-message') ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-robot"></i>';
         
         const bubbleDiv = document.createElement('div');
-        bubbleDiv.className = 'message-bubble';
+        bubbleDiv.className = 'msg-bubble';
         bubbleDiv.textContent = text;
-        
-        msgDiv.appendChild(avatarDiv);
-        msgDiv.appendChild(bubbleDiv);
-        
-        chatMessages.appendChild(msgDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    function addChatMessageHTML(html, type) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `message ${type}`;
-        
-        const avatarDiv = document.createElement('div');
-        avatarDiv.className = 'message-avatar';
-        avatarDiv.innerHTML = '<i class="fa-solid fa-robot"></i>';
-        
-        const bubbleDiv = document.createElement('div');
-        bubbleDiv.className = 'message-bubble';
-        bubbleDiv.innerHTML = html;
         
         msgDiv.appendChild(avatarDiv);
         msgDiv.appendChild(bubbleDiv);

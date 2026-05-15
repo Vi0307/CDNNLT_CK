@@ -1,211 +1,227 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog to Podcast AI Converter</title>
-    <meta name="description" content="Convert blog posts and articles into high-quality podcast audio using AI with natural-sounding voices.">
+    <title>Blog2Cast | AI Podcast Generator</title>
+    <meta name="description" content="Premium AI Podcast Generation Platform.">
     <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <!-- CSS -->
-    <link rel="stylesheet" href="styles.css?v=4">
+    <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
-    <!-- Background Elements -->
+    <!-- Immersive Background Effects -->
     <div class="bg-effects">
         <div class="orb orb-1"></div>
         <div class="orb orb-2"></div>
         <div class="orb orb-3"></div>
         <div class="grid-overlay"></div>
+        <div class="noise-overlay"></div>
     </div>
 
-    <div class="app-layout">
-        <!-- Sidebar -->
-        <aside class="sidebar glass-effect" style="border-radius: 0; border-top: none; border-bottom: none; border-left: none;">
+    <div class="dashboard-layout">
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar glass-panel">
             <div class="logo">
                 <div class="logo-icon">
                     <i class="fa-solid fa-podcast"></i>
                 </div>
                 <h1>Blog<span>2</span>Cast</h1>
             </div>
+            
             <nav class="nav-menu">
                 <a href="index.html" class="nav-item active">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Create Podcast</span>
+                    <span>Generate</span>
                 </a>
                 <a href="news.html" class="nav-item">
                     <i class="fa-solid fa-newspaper"></i>
                     <span>News</span>
                 </a>
             </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar"><i class="fa-solid fa-user"></i></div>
+                    <div class="user-info">
+                        <span class="name">Pro User</span>
+                        <span class="plan">Premium Plan</span>
+                    </div>
+                </div>
+            </div>
         </aside>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <main class="app-container">
-                <!-- Header -->
-                <header class="app-header">
-                    <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.5rem; margin-bottom: 10px;">Convert an Article</h2>
-                    <p class="tagline">Turn any blog post into an amazing audio experience</p>
-                </header>
+        <!-- CENTER CONTENT -->
+        <main class="center-panel">
+            <header class="hero-section">
+                <div class="badge-glow">
+                    <div class="badge-content">
+                        <i class="fa-solid fa-bolt"></i> Next-Gen AI Model 2.0
+                    </div>
+                </div>
+                <h1 class="hero-title">Transform Articles into<br><span class="gradient-text">Cinematic Audio</span></h1>
+                <p class="hero-subtitle">Paste any URL to generate a high-quality, studio-grade podcast with natural-sounding AI voices in seconds.</p>
+            </header>
 
-                <!-- Main Form Card -->
-                <section class="card glass-effect form-section" id="form-container">
-                    <form id="convert-form" novalidate>
-                        <div class="input-group">
-                            <label for="url-input">Article URL</label>
-                            <div class="input-field">
-                                <i class="fa-solid fa-link icon-left"></i>
-                                <input type="url" id="url-input" placeholder="https://example.com/your-article.html" required autocomplete="off">
-                                <div class="input-highlight"></div>
+            <section class="input-section glass-panel">
+                <form id="convert-form" novalidate>
+                    <div class="main-input-wrapper">
+                        <div class="url-input-container">
+                            <i class="fa-solid fa-link icon-glow"></i>
+                            <input type="url" id="url-input" placeholder="https://example.com/article" required autocomplete="off">
+                            <button type="submit" class="btn-generate" id="submit-btn">
+                                <span class="btn-text">Generate</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                                <div class="loader-spinner hidden" id="btn-loader"></div>
+                            </button>
+                        </div>
+                        <div class="input-glow-border"></div>
+                    </div>
+
+                    <div class="settings-row">
+                        <div class="setting-group">
+                            <label><i class="fa-solid fa-globe"></i> Language</label>
+                            <div class="select-wrapper">
+                                <select id="language-select">
+                                    <option value="vi">Vietnamese</option>
+                                    <option value="en">English</option>
+                                    <option value="fr">French (Français)</option>
+                                    <option value="ja">Japanese (日本語)</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down select-icon"></i>
                             </div>
                         </div>
-
-                        <div class="settings-row">
-                            <div class="input-group half">
-                                <label for="language-select">Language</label>
-                                <div class="select-field">
-                                    <i class="fa-solid fa-globe icon-left"></i>
-                                    <select id="language-select">
-                                        <option value="vi">Vietnamese</option>
-                                        <option value="en">English</option>
-                                        <option value="fr">French (Français)</option>
-                                        <option value="ja">Japanese (日本語)</option>
-                                    </select>
-                                    <i class="fa-solid fa-chevron-down icon-right"></i>
-                                </div>
-                            </div>
-                            <div class="input-group half">
-                                <label for="voice-select">AI Voice</label>
-                                <div class="select-field">
-                                    <i class="fa-solid fa-waveform-lines icon-left"></i>
-                                    <select id="voice-select">
-                                        <option value="vi-VN-Neural2-A">Female Voice (Southern)</option>
-                                    </select>
-                                    <i class="fa-solid fa-chevron-down icon-right"></i>
-                                </div>
+                        <div class="setting-group">
+                            <label><i class="fa-solid fa-waveform-lines"></i> AI Voice</label>
+                            <div class="select-wrapper">
+                                <select id="voice-select">
+                                    <option value="vi-VN-Neural2-A">Female Voice (Southern)</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down select-icon"></i>
                             </div>
                         </div>
+                    </div>
+                </form>
+                
+                <div class="trending-section">
+                    <span class="trending-label"><i class="fa-solid fa-fire"></i> Trending Topics:</span>
+                    <div class="chips-container" id="trending-chips">
+                        <button class="topic-chip">AI News</button>
+                        <button class="topic-chip">Bitcoin</button>
+                        <button class="topic-chip">SpaceX</button>
+                        <button class="topic-chip">Technology</button>
+                        <button class="topic-chip">Economy</button>
+                    </div>
+                </div>
+            </section>
+        </main>
 
-                        <button type="submit" class="btn btn-primary btn-glow" id="submit-btn">
-                            <span class="btn-text">Start Creating Podcast</span>
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            <div class="loader-spinner hidden" id="btn-loader"></div>
+        <!-- RIGHT PANEL (Dynamic View) -->
+        <aside class="right-panel hidden" id="main-right-panel">
+            
+
+            <!-- State 2: Generating -->
+            <div id="state-generating" class="panel-state hidden glass-panel">
+                <div class="generating-animation">
+                    <div class="ai-core"></div>
+                    <div class="pulse-ring ring-1"></div>
+                    <div class="pulse-ring ring-2"></div>
+                    <div class="pulse-ring ring-3"></div>
+                </div>
+                <h3 class="generating-text">Synthesizing Audio...</h3>
+                
+                <div class="progress-steps">
+                    <div class="p-step active" id="step-1">
+                        <div class="step-dot"></div>
+                        <span>Extracting content & analyzing</span>
+                    </div>
+                    <div class="p-step" id="step-2">
+                        <div class="step-dot"></div>
+                        <span>Writing AI script</span>
+                    </div>
+                    <div class="p-step" id="step-3">
+                        <div class="step-dot"></div>
+                        <span>Generating neural voice</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- State 3: Result -->
+            <div id="state-result" class="panel-state hidden glass-panel result-layout">
+                <!-- Cover Art & Title -->
+                <div class="result-header">
+                    <div class="cover-art">
+                        <div class="cover-gradient"></div>
+                        <i class="fa-solid fa-podcast"></i>
+                    </div>
+                    <div class="track-info">
+                        <h3 id="result-title">Generated Podcast</h3>
+                        <div class="track-meta">
+                            <span class="badge-tag">AI Generated</span>
+                            <span class="meta-dot">•</span>
+                            <span id="result-voice-name">Neural Voice</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Audio Player -->
+                <div class="custom-player">
+                    <audio id="audio-player" preload="metadata"></audio>
+                    <div class="player-controls-row">
+                        <button id="play-pause-btn" class="play-btn">
+                            <i class="fa-solid fa-play"></i>
                         </button>
-                    </form>
-                </section>
-
-                <!-- Progress Tracker -->
-                <section class="progress-section hidden" id="progress-container">
-                    <div class="steps-wrapper glass-effect">
-                        <div class="step pending" id="step-1">
-                            <div class="step-icon-box">
-                                <i class="fa-solid fa-spider"></i>
-                                <div class="ring"></div>
-                            </div>
-                            <div class="step-info">
-                                <h3>Extract Content</h3>
-                                <p class="status-text">Waiting...</p>
-                            </div>
+                        <div class="waveform-container" id="waveform-container">
+                            <div class="waveform-progress" id="waveform-progress"></div>
+                            <!-- Bars generated by JS -->
                         </div>
-
-                        <div class="step-divider"></div>
-
-                        <div class="step pending" id="step-2">
-                            <div class="step-icon-box">
-                                <i class="fa-solid fa-brain"></i>
-                                <div class="ring"></div>
-                            </div>
-                            <div class="step-info">
-                                <h3>AI Script Writing</h3>
-                                <p class="status-text">Waiting...</p>
-                            </div>
-                        </div>
-
-                        <div class="step-divider"></div>
-
-                        <div class="step pending" id="step-3">
-                            <div class="step-icon-box">
-                                <i class="fa-solid fa-compact-disc"></i>
-                                <div class="ring"></div>
-                            </div>
-                            <div class="step-info">
-                                <h3>Audio Synthesis</h3>
-                                <p class="status-text">Waiting...</p>
-                            </div>
-                        </div>
+                        <span class="time-display" id="time-display">0:00</span>
                     </div>
-                </section>
+                </div>
 
-                <!-- Result Section -->
-                <section class="result-section hidden" id="result-container">
-                    <div class="result-layout">
-                        <!-- Top Block: Audio & Summary -->
-                        <div class="result-top card glass-effect">
-                            <div class="success-header">
-                                <div class="success-icon-wrapper">
-                                    <i class="fa-solid fa-circle-check"></i>
-                                </div>
-                                <h2>Podcast Ready!</h2>
-                            </div>
+                <!-- Actions -->
+                <div class="action-buttons">
+                    <a href="#" id="download-btn" class="btn-action primary" download>
+                        <i class="fa-solid fa-download"></i> Download MP3
+                    </a>
+                    <button id="reset-btn" class="btn-action secondary">
+                        <i class="fa-solid fa-rotate-left"></i> Create New
+                    </button>
+                </div>
 
-                            <div class="audio-player-container">
-                                <audio id="audio-player" controls preload="metadata">
-                                    Your browser does not support the audio element.
-                                </audio>
-                            </div>
-
-                            <div class="summary-container" style="flex: 1; display: flex; flex-direction: column; min-height: 200px;">
-                                <div class="summary-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <h3 style="margin: 0;"><i class="fa-solid fa-file-lines"></i> Content Summary</h3>
-                                    <div class="summary-tabs" style="display: flex; gap: 4px; background: rgba(255, 255, 255, 0.05); padding: 4px; border-radius: 8px;">
-                                        <button type="button" id="tab-original" class="tab-btn active" style="background: var(--primary-color); border: none; padding: 6px 12px; border-radius: 6px; color: white; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">Original</button>
-                                        <button type="button" id="tab-translated" class="tab-btn" style="background: transparent; border: none; padding: 6px 12px; border-radius: 6px; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease;">Translated</button>
-                                    </div>
-                                </div>
-                                <div class="summary-content" id="dynamic-summary-content" style="flex: 1; font-size: 1rem; line-height: 1.6; color: var(--text-primary); background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 8px; overflow-y: auto; max-height: 350px;">
-                                    <p>Loading summary...</p>
-                                </div>
-                            </div>
-
-                            <div class="action-buttons">
-                                <a href="#" id="download-btn" class="btn btn-secondary" download>
-                                    <i class="fa-solid fa-download"></i> Download MP3
-                                </a>
-                                <button id="reset-btn" class="btn btn-outline">
-                                    <i class="fa-solid fa-rotate-left"></i> Start Over
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Bottom Block: AI Q&A Chat -->
-                        <div class="result-bottom card glass-effect ai-chat-container">
-                            <div class="chat-header">
-                                <i class="fa-solid fa-robot"></i>
-                                <h3>AI Assistant - Q&A</h3>
-                            </div>
-
-                            <div class="chat-messages" id="chat-messages">
-                                <div class="message ai-message">
-                                    <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
-                                    <div class="message-bubble">
-                                        Hi there! I'm your AI assistant. Do you have any questions about this podcast?
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="chat-input-area">
-                                <input type="text" id="chat-input" placeholder="Ask AI about this podcast..." autocomplete="off">
-                                <button id="send-chat-btn" class="btn-icon">
-                                    <i class="fa-solid fa-paper-plane"></i>
-                                </button>
-                            </div>
-                        </div>
+                <!-- Summary Tabs -->
+                <div class="summary-section">
+                    <div class="section-title">
+                        <i class="fa-solid fa-file-lines"></i> Transcript & Summary
                     </div>
-                </section>
-            </main>
-        </div>
+                    <div class="summary-tabs">
+                         <button id="tab-original" class="tab-btn active">Original</button>
+                         <button id="tab-translated" class="tab-btn">Translated</button>
+                    </div>
+                    <div class="summary-content" id="dynamic-summary-content">
+                        <!-- Content loaded here -->
+                    </div>
+                </div>
+
+                <!-- AI Chat -->
+                <div class="ai-chat-section">
+                    <div class="chat-header">
+                        <i class="fa-solid fa-sparkles text-gradient"></i> 
+                        <span>Ask AI Assistant</span>
+                    </div>
+                    <div class="chat-messages" id="chat-messages">
+                        <!-- Chat messages -->
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="Ask about this podcast..." autocomplete="off">
+                        <button id="send-chat-btn"><i class="fa-solid fa-arrow-up"></i></button>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
     </div>
 
     <!-- Error Toast -->
@@ -215,68 +231,36 @@
         </div>
         <div class="toast-content">
             <h4>Connection Error</h4>
-            <p id="error-msg">Unable to fetch data from the URL.</p>
+            <p id="error-msg">Unable to fetch data.</p>
         </div>
         <button class="close-toast" id="close-toast-btn">
             <i class="fa-solid fa-xmark"></i>
         </button>
     </div>
 
-    <!-- Explain Popup -->
-    <div id="explain-popup" style="
-        display: none;
-        position: fixed;
-        z-index: 9999;
-        background: #1e1e2e;
-        border: 1px solid rgba(139,92,246,0.4);
-        border-radius: 12px;
-        padding: 16px;
-        max-width: 320px;
-        min-width: 220px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-        font-family: 'Inter', sans-serif;
-    ">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <span style="font-size:0.8rem; color:#a78bfa; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">
-                <i class="fa-solid fa-book-open"></i> Explain
-            </span>
-            <button id="explain-popup-close" style="background:none;border:none;color:#888;cursor:pointer;font-size:1rem;">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        <div id="explain-popup-word" style="font-size:1rem; font-weight:700; color:#e2e8f0; margin-bottom:8px;"></div>
-        <div id="explain-popup-body" style="font-size:0.9rem; color:#cbd5e1; line-height:1.6;">
-            <div id="explain-loading" style="text-align:center; padding:10px;">
-                <i class="fa-solid fa-spinner fa-spin" style="color:#a78bfa;"></i> Explaining...
-            </div>
-            <div id="explain-content" style="display:none;">
-                <div id="explain-meaning" style="margin-bottom:8px;"></div>
-                <div id="explain-example" style="font-style:italic; color:#94a3b8; font-size:0.85rem; border-left:2px solid #a78bfa; padding-left:8px;"></div>
-            </div>
-            <div id="explain-error" style="display:none; color:#f87171;"></div>
-        </div>
-    </div>
-
-    <!-- Selection Tooltip -->
-    <div id="selection-tooltip" style="
-        display: none;
-        position: fixed;
-        z-index: 9998;
-        background: #7c3aed;
-        color: white;
-        border-radius: 8px;
-        padding: 6px 12px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(124,58,237,0.5);
-        white-space: nowrap;
-        user-select: none;
-    ">
+    <!-- Explain Popup & Tooltip -->
+    <div id="selection-tooltip" class="selection-tooltip" style="display: none;">
         <i class="fa-solid fa-book-open"></i> Explain
     </div>
+    
+    <div id="explain-popup" class="explain-popup glass-panel" style="display: none;">
+        <div class="explain-header">
+            <span class="explain-title"><i class="fa-solid fa-book-open"></i> AI Explanation</span>
+            <button id="explain-popup-close" class="explain-close"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="explain-popup-word" class="explain-word"></div>
+        <div class="explain-body">
+            <div id="explain-loading" class="explain-loader">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Analyzing...
+            </div>
+            <div id="explain-content" style="display:none;">
+                <div id="explain-meaning" class="explain-meaning"></div>
+                <div id="explain-example" class="explain-example"></div>
+            </div>
+            <div id="explain-error" class="explain-error" style="display:none;"></div>
+        </div>
+    </div>
 
-    <!-- Script -->
-    <script src="app.js?v=7"></script>
+    <script src="app.js?v=8"></script>
 </body>
 </html>
