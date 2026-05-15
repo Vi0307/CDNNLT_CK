@@ -17,20 +17,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Voice mapping based on language
     const voiceMap = {
         'vi': [
-            { value: 'vi-VN-Neural2-A', label: 'Giọng Nữ (Miền Nam)' },
-            { value: 'vi-VN-Neural2-D', label: 'Giọng Nam (Miền Bắc)' }
+            { value: 'vi-VN-Neural2-A', label: 'Female Voice (Southern)' },
+            { value: 'vi-VN-Neural2-D', label: 'Male Voice (Northern)' }
         ],
         'en': [
             { value: 'en-US-Neural2-F', label: 'Female (US English)' },
             { value: 'en-US-Neural2-J', label: 'Male (US English)' }
         ],
         'fr': [
-            { value: 'fr-FR-Neural2-A', label: 'Giọng Nữ (Pháp)' },
-            { value: 'fr-FR-Neural2-B', label: 'Giọng Nam (Pháp)' }
+            { value: 'fr-FR-Neural2-A', label: 'Female Voice (French)' },
+            { value: 'fr-FR-Neural2-B', label: 'Male Voice (French)' }
         ],
         'ja': [
-            { value: 'ja-JP-Neural2-A', label: 'Giọng Nữ (Nhật)' },
-            { value: 'ja-JP-Neural2-B', label: 'Giọng Nam (Nhật)' }
+            { value: 'ja-JP-Neural2-A', label: 'Female Voice (Japanese)' },
+            { value: 'ja-JP-Neural2-B', label: 'Male Voice (Japanese)' }
         ]
     };
 
@@ -62,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const audioPlayer = document.getElementById('audio-player');
     const downloadBtn = document.getElementById('download-btn');
     const resetBtn = document.getElementById('reset-btn');
-    const saveBtn = document.getElementById('save-btn');
 
     // New AI UI Elements
     const dynamicSummaryContent = document.getElementById('dynamic-summary-content');
@@ -101,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentOriginalHTML) {
                 dynamicSummaryContent.innerHTML = `<p>${currentOriginalHTML}</p>`;
             } else {
-                dynamicSummaryContent.innerHTML = `<p>Bản tóm tắt ngôn ngữ gốc không khả dụng.</p>`;
+                dynamicSummaryContent.innerHTML = `<p>Original language summary not available.</p>`;
             }
         });
 
@@ -115,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentTranslatedHTML) {
                 dynamicSummaryContent.innerHTML = `<p>${currentTranslatedHTML}</p>`;
             } else {
-                dynamicSummaryContent.innerHTML = `<p>Bản tóm tắt ngôn ngữ chuyển đổi không khả dụng.</p>`;
+                dynamicSummaryContent.innerHTML = `<p>Translated language summary not available.</p>`;
             }
         });
     }
@@ -180,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const url = urlInput.value.trim();
         if (!url) {
-            showError('Vui lòng nhập đường dẫn bài viết!');
+            showError('Please enter an article URL!');
             return;
         }
 
@@ -191,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Hiển thị các bước đang chạy tuần tự (UI feedback)
-            updateStep(step1, 'active', 'Đang tải nội dung...');
+            updateStep(step1, 'active', 'Loading content...');
 
             // Gọi 1 request duy nhất — gateway xử lý toàn bộ pipeline
             const result = await fetchApi(CONVERT_URL, {
@@ -206,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateStep(step2, 'done', 'Hoàn tất');
             updateStep(step3, 'done', 'Hoàn tất');
 
-            if (!result.audio_url) throw new Error('Tạo âm thanh thất bại.');
+            if (!result.audio_url) throw new Error('Audio generation failed.');
 
             // Lưu nội dung bài báo gốc để dùng cho Q&A
             rawArticleText = result.raw_text || '';
@@ -222,14 +221,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Giả lập tiến trình bước UI trong khi chờ gateway (UX)
     function animateSteps() {
         return new Promise((resolve) => {
-            setTimeout(() => updateStep(step1, 'active', 'Đang tải nội dung...'), 0);
+            setTimeout(() => updateStep(step1, 'active', 'Loading content...'), 0);
             setTimeout(() => {
-                updateStep(step1, 'done', 'Hoàn tất');
-                updateStep(step2, 'active', 'Đang biên tập kịch bản...');
+                updateStep(step1, 'done', 'Done');
+                updateStep(step2, 'active', 'Writing script...');
             }, 3000);
             setTimeout(() => {
-                updateStep(step2, 'done', 'Hoàn tất');
-                updateStep(step3, 'active', 'Đang tổng hợp giọng nói...');
+                updateStep(step2, 'done', 'Done');
+                updateStep(step3, 'active', 'Synthesizing voice...');
                 resolve();
             }, 8000);
         });
@@ -251,51 +250,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         [step1, step2, step3].forEach(step => {
             step.className = 'step pending';
-            step.querySelector('.status-text').textContent = 'Đang chờ...';
+            step.querySelector('.status-text').textContent = 'Waiting...';
         });
 
         audioPlayer.pause();
         audioPlayer.src = '';
     });
-
-    // ── Save ──────────────────────────────────────────────────────────
-    if (saveBtn) {
-        saveBtn.addEventListener('click', () => {
-            const history = JSON.parse(localStorage.getItem('podcastHistory') || '[]');
-            
-            // Lấy domain từ URL
-            let domain = 'Bài viết';
-            try {
-                const urlObj = new URL(urlInput.value);
-                domain = urlObj.hostname;
-            } catch (e) {}
-
-            const newItem = {
-                id: Date.now().toString(),
-                url: urlInput.value,
-                title: `Podcast từ ${domain}`,
-                date: new Date().toISOString(),
-                language: langSelect.value,
-                audioUrl: audioPlayer.src,
-                originalSummary: currentOriginalSummary,
-                translatedSummary: currentTranslatedSummary
-            };
-            
-            history.unshift(newItem); // Thêm lên đầu danh sách
-            localStorage.setItem('podcastHistory', JSON.stringify(history));
-            
-            // Hiển thị thông báo thành công
-            const originalText = saveBtn.innerHTML;
-            saveBtn.innerHTML = '<i class="fa-solid fa-check"></i> Đã lưu';
-            saveBtn.style.background = 'var(--success)';
-            saveBtn.style.color = 'white';
-            setTimeout(() => {
-                saveBtn.innerHTML = originalText;
-                saveBtn.style.background = 'var(--primary-dark)';
-                saveBtn.style.color = 'var(--bg-dark)';
-            }, 2000);
-        });
-    }
 
     // ── Close Toast ────────────────────────────────────────────────────
     closeToastBtn.addEventListener('click', () => {
@@ -314,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.detail || `Lỗi API: ${response.status}`);
+            throw new Error(errData.detail || `API Error: ${response.status}`);
         }
 
         return await response.json();
@@ -330,17 +290,17 @@ document.addEventListener('DOMContentLoaded', () => {
         progressContainer.classList.remove('hidden');
 
         // Animate steps while waiting for gateway response
-        updateStep(step1, 'active', 'Đang tải nội dung...');
+        updateStep(step1, 'active', 'Loading content...');
         setTimeout(() => {
             if (document.querySelector('.step.active') === step1) {
-                updateStep(step1, 'done', 'Hoàn tất');
-                updateStep(step2, 'active', 'Đang biên tập kịch bản...');
+                updateStep(step1, 'done', 'Done');
+                updateStep(step2, 'active', 'Writing script...');
             }
         }, 4000);
         setTimeout(() => {
             if (document.querySelector('.step.active') === step2) {
-                updateStep(step2, 'done', 'Hoàn tất');
-                updateStep(step3, 'active', 'Đang tổng hợp giọng nói...');
+                updateStep(step2, 'done', 'Done');
+                updateStep(step3, 'active', 'Synthesizing voice...');
             }
         }, 10000);
     }
@@ -366,16 +326,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             [step1, step2, step3].forEach(step => {
                 step.className = 'step pending';
-                step.querySelector('.status-text').textContent = 'Đang chờ...';
+                step.querySelector('.status-text').textContent = 'Waiting...';
             });
         }, 3000);
     }
 
     function showResult(audioPath, summaryText, originalSummaryText) {
         // Đảm bảo tất cả steps đều done trước khi hiện kết quả
-        updateStep(step1, 'done', 'Hoàn tất');
-        updateStep(step2, 'done', 'Hoàn tất');
-        updateStep(step3, 'done', 'Hoàn tất');
+        updateStep(step1, 'done', 'Done');
+        updateStep(step2, 'done', 'Done');
+        updateStep(step3, 'done', 'Done');
 
         setTimeout(() => {
             progressContainer.classList.add('hidden');
@@ -410,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="message ai-message">
                     <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
                     <div class="message-bubble">
-                        Chào bạn! Tôi là trợ lý AI. Bạn có câu hỏi nào về nội dung của podcast này không?
+                        Hi there! I'm your AI assistant. Do you have any questions about this podcast?
                     </div>
                 </div>
             `;
@@ -493,17 +453,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ word, context: (rawArticleText || currentContext).slice(0, 3000), language: langSelect.value }),
             });
-            if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+            if (!res.ok) throw new Error(`Error ${res.status}`);
             const data = await res.json();
 
-            explainMeaning.innerHTML = `<strong>Nghĩa:</strong> ${data.meaning || '—'}`;
-            explainExample.innerHTML = data.example ? `Ví dụ: ${data.example}` : '';
+            explainMeaning.innerHTML = `<strong>Meaning:</strong> ${data.meaning || '—'}`;
+            explainExample.innerHTML = data.example ? `Example: ${data.example}` : '';
             explainLoading.style.display = 'none';
             explainContent.style.display = 'block';
         } catch (err) {
             explainLoading.style.display = 'none';
             explainError.style.display   = 'block';
-            explainError.textContent     = `Không giải thích được: ${err.message}`;
+            explainError.textContent     = `Could not explain: ${err.message}`;
         }
     });
 
@@ -619,12 +579,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const loadingEl = document.getElementById(loadingId);
             if (loadingEl) loadingEl.remove();
 
-            const answer = data.answer || 'Không có câu trả lời.';
+            const answer = data.answer || 'No answer available.';
             const source = data.source || '';
             const confidence = data.confidence || 'low';
 
             const confidenceColor = confidence === 'high' ? '#4ade80' : confidence === 'medium' ? '#fbbf24' : '#94a3b8';
-            const confidenceLabel = confidence === 'high' ? 'Chắc chắn' : confidence === 'medium' ? 'Khá chắc' : 'Không chắc';
+            const confidenceLabel = confidence === 'high' ? 'Confident' : confidence === 'medium' ? 'Fairly confident' : 'Uncertain';
 
             let html = `<div>${answer}</div>`;
             if (source) {
@@ -637,7 +597,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => {
             const loadingEl = document.getElementById(loadingId);
             if (loadingEl) loadingEl.remove();
-            addChatMessage(`Lỗi: ${err.message}`, 'ai-message');
+            addChatMessage(`Error: ${err.message}`, 'ai-message');
         });
     }
 
