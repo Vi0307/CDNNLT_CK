@@ -1,4 +1,4 @@
-﻿document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
     const GATEWAY = "http://localhost:8000";
 
     const topicInput = document.getElementById("topic-input");
@@ -183,7 +183,8 @@
         tabOriginal.classList.add("active"); tabTranslated.classList.remove("active");
     });
 
-    generateBtn.addEventListener("click", async () => {
+    document.getElementById("convert-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
         const query = topicInput.value.trim();
         if (!query) { showError("Vui lòng nhập chủ đề tin tức!"); return; }
 
@@ -254,12 +255,12 @@
                 data.summary = data.raw_data || "";
                 data.articles = [];
             }
-            steps.forEach(s => { s.className = "step done"; s.querySelector(".status-text").textContent = "Done"; });
+            steps.forEach(s => { s.className = "p-step active"; s.querySelector("span").textContent = "Done"; });
             showResult(data);
         } catch (err) {
             timers.forEach(t => clearTimeout(t));
             const active = steps.find(s => s.classList.contains("active"));
-            if (active) { active.className = "step error"; active.querySelector(".status-text").textContent = "Failed"; }
+            if (active) { active.className = "p-step active"; active.querySelector("span").textContent = "Failed"; }
             const isOffline = err instanceof TypeError && (err.message.includes("Failed to fetch") || err.message.includes("NetworkError"));
             showError(isOffline
                 ? "⚠️ Cannot connect to server. Make sure Docker is running (docker compose up) and try again!"
@@ -306,8 +307,8 @@
                     "<a href='" + escHtml(a.url) + "' target='_blank' rel='noopener' style='color:#a78bfa;font-size:.8rem;flex-shrink:0;'><i class='fa-solid fa-arrow-up-right-from-square'></i></a>";
                 articleList.appendChild(div);
             });
-            chatMessages.innerHTML = "<div class='chat-msg'><div class='chat-avatar ai'><i class='fa-solid fa-robot'></i></div>" +
-                "<div class='chat-bubble ai'>I've finished reading <strong>" + arts.length + "</strong> articles about <strong>" + escHtml(data.topic) + "</strong>. What would you like to know?</div></div>";
+            chatMessages.innerHTML = "<div class='message'><div class='msg-avatar ai'><i class='fa-solid fa-robot'></i></div>" +
+                "<div class='msg-content ai'>I've finished reading <strong>" + arts.length + "</strong> articles about <strong>" + escHtml(data.topic) + "</strong>. What would you like to know?</div></div>";
         }, 600);
     }
 
@@ -321,9 +322,11 @@
         generateBtn.querySelector("i").style.display = "none";
         btnLoader.classList.remove("hidden");
         formContainer.classList.add("hidden");
+        document.getElementById('main-right-panel').classList.remove('hidden');
         progressContainer.classList.remove("hidden");
         resultContainer.classList.add("hidden");
-        steps.forEach(s => { s.className = "step pending"; s.querySelector(".status-text").textContent = "Waiting..."; });
+
+        steps.forEach(s => { s.className = "p-step"; s.querySelector("span").textContent = "Waiting..."; });
     }
     function resetUI() {
         generateBtn.disabled = false;
@@ -331,8 +334,10 @@
         generateBtn.querySelector("i").style.display = "";
         btnLoader.classList.add("hidden");
         formContainer.classList.remove("hidden");
+        document.getElementById('main-right-panel').classList.add('hidden');
         progressContainer.classList.add("hidden");
         resultContainer.classList.add("hidden");
+
         audioPlayer.pause(); audioPlayer.src = "";
         currentScript = currentScriptVi = currentContext = "";
         parsedResult = null;
@@ -340,8 +345,8 @@
     }
     function setStep(idx, status, msg) {
         if (!steps[idx]) return;
-        steps[idx].className = "step " + status;
-        steps[idx].querySelector(".status-text").textContent = msg;
+        steps[idx].className = "p-step " + (status === "active" || status === "done" ? "active" : "");
+        steps[idx].querySelector("span").textContent = msg;
     }
     function showError(msg) {
         errorMsg.textContent = msg;
@@ -434,11 +439,11 @@
     }
     function addMsg(content, type, id, isHtml) {
         const wrap = document.createElement("div");
-        wrap.className = "chat-msg" + (type === "user" ? " user" : "");
+        wrap.className = "message" + (type === "user" ? " user" : "");
         if (id) wrap.id = id;
-        const av = document.createElement("div"); av.className = "chat-avatar " + type;
+        const av = document.createElement("div"); av.className = "msg-avatar " + type;
         av.innerHTML = type === "user" ? "<i class='fa-solid fa-user'></i>" : "<i class='fa-solid fa-robot'></i>";
-        const bub = document.createElement("div"); bub.className = "chat-bubble " + type;
+        const bub = document.createElement("div"); bub.className = "msg-content " + type;
         if (isHtml) bub.innerHTML = content; else bub.textContent = content;
         wrap.appendChild(av); wrap.appendChild(bub);
         chatMessages.appendChild(wrap); chatMessages.scrollTop = chatMessages.scrollHeight;
