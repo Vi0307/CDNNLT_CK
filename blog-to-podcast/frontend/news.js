@@ -8,6 +8,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const progressContainer = document.getElementById("progress-container");
     const resultContainer = document.getElementById("result-container");
     const audioPlayer = document.getElementById("audio-player");
+    const playPauseBtn = document.getElementById("play-pause-btn");
+    const playPauseIcon = playPauseBtn ? playPauseBtn.querySelector("i") : null;
+    const waveformContainer = document.getElementById("waveform-container");
+    const timeDisplay = document.getElementById("time-display");
     const downloadBtn = document.getElementById("download-btn");
     const saveBtn = document.getElementById("save-btn");
     const resetBtn = document.getElementById("reset-btn");
@@ -105,6 +109,87 @@ document.addEventListener("DOMContentLoaded", () => {
             triggerParse(chip.dataset.topic);
         });
     });
+
+    // --- Waveform & Audio Player Logic ---
+    const NUM_BARS = 70;
+    let animationId;
+
+    function generateWaveformBars() {
+        if (!waveformContainer) return;
+        waveformContainer.innerHTML = '<div class="waveform-progress" id="waveform-progress"></div>';
+        for (let i = 0; i < NUM_BARS; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'waveform-bar';
+            const height = 20 + Math.random() * 80;
+            bar.style.height = `${height}%`;
+            waveformContainer.appendChild(bar);
+        }
+    }
+    generateWaveformBars();
+
+    function animateWaveform() {
+        if (!waveformContainer) return;
+        const bars = waveformContainer.querySelectorAll('.waveform-bar');
+        bars.forEach(bar => {
+            if (Math.random() > 0.8) {
+                const newHeight = 30 + Math.random() * 70;
+                bar.style.height = `${newHeight}%`;
+            }
+        });
+        animationId = requestAnimationFrame(animateWaveform);
+    }
+
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener('click', () => {
+            if (audioPlayer.paused) audioPlayer.play();
+            else audioPlayer.pause();
+        });
+    }
+
+    audioPlayer.addEventListener('play', () => {
+        if (playPauseIcon) playPauseIcon.className = 'fa-solid fa-pause';
+        animateWaveform();
+    });
+
+    audioPlayer.addEventListener('pause', () => {
+        if (playPauseIcon) playPauseIcon.className = 'fa-solid fa-play';
+        cancelAnimationFrame(animationId);
+    });
+
+    audioPlayer.addEventListener('ended', () => {
+        if (playPauseIcon) playPauseIcon.className = 'fa-solid fa-play';
+        cancelAnimationFrame(animationId);
+        const progEl = document.getElementById('waveform-progress');
+        if (progEl) progEl.style.width = '0%';
+    });
+
+    function formatTime(seconds) {
+        if (isNaN(seconds)) return '0:00';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    audioPlayer.addEventListener('timeupdate', () => {
+        if (!audioPlayer.duration) return;
+        const progress = audioPlayer.currentTime / audioPlayer.duration;
+        const progEl = document.getElementById('waveform-progress');
+        if (progEl) progEl.style.width = `${progress * 100}%`;
+        if (timeDisplay) timeDisplay.textContent = `${formatTime(audioPlayer.currentTime)} / ${formatTime(audioPlayer.duration)}`;
+    });
+
+    audioPlayer.addEventListener('loadedmetadata', () => {
+        if (timeDisplay) timeDisplay.textContent = `0:00 / ${formatTime(audioPlayer.duration)}`;
+    });
+
+    if (waveformContainer) {
+        waveformContainer.addEventListener('click', (e) => {
+            if (!audioPlayer.duration) return;
+            const rect = waveformContainer.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            audioPlayer.currentTime = pos * audioPlayer.duration;
+        });
+    }
 
     // Debounce parse khi gõ
     topicInput.addEventListener("input", () => {
@@ -271,8 +356,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function showResult(data) {
         setTimeout(() => {
-            progressContainer.classList.add("hidden");
+            progressContainer.classList.remove("active");
+            setTimeout(() => progressContainer.classList.add("hidden"), 500);
+
             resultContainer.classList.remove("hidden");
+            setTimeout(() => resultContainer.classList.add("active"), 10);
+            
+            // Hide hero to focus on result
+            document.getElementById('hero-section').classList.add('hidden');
+
             podcastTitle.textContent = data.title || ("Podcast: " + data.topic);
             topicTag.textContent = data.topic;
             summaryBox.textContent = data.summary || "";
@@ -295,6 +387,10 @@ document.addEventListener("DOMContentLoaded", () => {
             audioPlayer.src = audioUrl; audioPlayer.load();
             downloadBtn.href = audioUrl;
             downloadBtn.download = "podcast-" + data.topic + ".mp3";
+            
+            // Regenerate bars for new track
+            generateWaveformBars();
+            if (timeDisplay) timeDisplay.textContent = "0:00 / 0:00";
             const arts = data.articles || [];
             articleCount.textContent = arts.length;
             articleList.innerHTML = "";
@@ -322,9 +418,12 @@ document.addEventListener("DOMContentLoaded", () => {
         generateBtn.querySelector("i").style.display = "none";
         btnLoader.classList.remove("hidden");
         formContainer.classList.add("hidden");
-        document.getElementById('main-right-panel').classList.remove('hidden');
+        
         progressContainer.classList.remove("hidden");
+        setTimeout(() => progressContainer.classList.add("active"), 10);
+        
         resultContainer.classList.add("hidden");
+        resultContainer.classList.remove("active");
 
         steps.forEach(s => { s.className = "p-step"; s.querySelector("span").textContent = "Waiting..."; });
     }
@@ -334,11 +433,22 @@ document.addEventListener("DOMContentLoaded", () => {
         generateBtn.querySelector("i").style.display = "";
         btnLoader.classList.add("hidden");
         formContainer.classList.remove("hidden");
-        document.getElementById('main-right-panel').classList.add('hidden');
+        
+        document.getElementById('hero-section').classList.remove('hidden');
+        
+        progressContainer.classList.remove("active");
         progressContainer.classList.add("hidden");
+        
+        resultContainer.classList.remove("active");
         resultContainer.classList.add("hidden");
 
         audioPlayer.pause(); audioPlayer.src = "";
+        if (playPauseIcon) playPauseIcon.className = 'fa-solid fa-play';
+        cancelAnimationFrame(animationId);
+        if (timeDisplay) timeDisplay.textContent = "0:00 / 0:00";
+        const progEl = document.getElementById('waveform-progress');
+        if (progEl) progEl.style.width = '0%';
+
         currentScript = currentScriptVi = currentContext = "";
         parsedResult = null;
         parsePreview.style.display = "none";
@@ -439,14 +549,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     function addMsg(content, type, id, isHtml) {
         const wrap = document.createElement("div");
-        wrap.className = "message" + (type === "user" ? " user" : "");
+        const fullType = type === "user" ? "user-message" : "ai-message";
+        wrap.className = `message ${fullType}`;
         if (id) wrap.id = id;
-        const av = document.createElement("div"); av.className = "msg-avatar " + type;
+        
+        const av = document.createElement("div"); 
+        av.className = "msg-avatar";
         av.innerHTML = type === "user" ? "<i class='fa-solid fa-user'></i>" : "<i class='fa-solid fa-robot'></i>";
-        const bub = document.createElement("div"); bub.className = "msg-content " + type;
+        
+        const bub = document.createElement("div"); 
+        bub.className = "msg-bubble";
         if (isHtml) bub.innerHTML = content; else bub.textContent = content;
-        wrap.appendChild(av); wrap.appendChild(bub);
-        chatMessages.appendChild(wrap); chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        wrap.appendChild(av); 
+        wrap.appendChild(bub);
+        chatMessages.appendChild(wrap); 
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     document.addEventListener("mouseup", e => {
