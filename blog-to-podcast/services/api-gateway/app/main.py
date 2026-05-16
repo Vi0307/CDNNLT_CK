@@ -28,7 +28,6 @@ app.add_middleware(
 CONTENT_SERVICE_URL = os.getenv("CONTENT_SERVICE_URL", "http://content-service:8001")
 PROCESS_SERVICE_URL = os.getenv("PROCESS_SERVICE_URL", "http://process-service:8002")
 TTS_SERVICE_URL     = os.getenv("TTS_SERVICE_URL",     "http://tts-service:8003")
-LIBRARY_SERVICE_URL = os.getenv("LIBRARY_SERVICE_URL", "http://library-service:8005")
 NEWS_SERVICE_URL    = os.getenv("NEWS_SERVICE_URL",    "http://news-service:8006")
 
 TTS_SAFE_MAX_CHARS = 4500
@@ -51,23 +50,7 @@ class ConvertResponse(BaseModel):
     original_script: str = ""
     script: str = ""
     source: str
-    raw_text: str = ""   # nội dung bài báo gốc để dùng cho Q&A
-
-
-class LibraryPodcast(BaseModel):
-    id: int
-    title: str
-    original_url: str
-    audio_url: str
-    summary: Optional[str] = None
-    created_at: str
-
-
-class LibraryPodcastCreate(BaseModel):
-    title: str
-    original_url: str
-    audio_url: str
-    summary: Optional[str] = None
+    raw_text: str = ""
 
 
 # ---------- Health ----------
@@ -81,7 +64,7 @@ def health():
             "content": CONTENT_SERVICE_URL,
             "process": PROCESS_SERVICE_URL,
             "tts":     TTS_SERVICE_URL,
-            "library": LIBRARY_SERVICE_URL,
+            "news":    NEWS_SERVICE_URL,
         },
     }
 
@@ -758,47 +741,6 @@ async def proxy_download(filename: str):
             "Accept-Ranges": "bytes"
         },
     )
-
-
-# ---------- Library Proxy ----------
-
-@app.get("/library", response_model=list[LibraryPodcast])
-async def get_library():
-    """Lấy danh sách podcast đã lưu."""
-    async with httpx.AsyncClient() as client:
-        try:
-            res = await client.get(f"{LIBRARY_SERVICE_URL}/podcasts")
-            res.raise_for_status()
-            return res.json()
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Lỗi Library Service: {e}")
-
-
-@app.post("/library", response_model=LibraryPodcast)
-async def save_to_library(podcast: LibraryPodcastCreate):
-    """Lưu podcast vào thư viện."""
-    async with httpx.AsyncClient() as client:
-        try:
-            res = await client.post(
-                f"{LIBRARY_SERVICE_URL}/podcasts",
-                json=podcast.dict()
-            )
-            res.raise_for_status()
-            return res.json()
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Lỗi Library Service: {e}")
-
-
-@app.delete("/library/{podcast_id}")
-async def delete_from_library(podcast_id: int):
-    """Xóa podcast khỏi thư viện."""
-    async with httpx.AsyncClient() as client:
-        try:
-            res = await client.delete(f"{LIBRARY_SERVICE_URL}/podcasts/{podcast_id}")
-            res.raise_for_status()
-            return res.json()
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Lỗi Library Service: {e}")
 
 
 # ---------- Helpers ----------
