@@ -669,6 +669,17 @@ CÁC BÀI BÁO:
             m = _re.search(r'\{[\s\S]*\}', ai_content_clean)
             if not m:
                 logger.error(f"[AI] Cannot parse JSON. Full content: {ai_content[:500]}")
+                # Check for refusal/safety block
+                refusal_keywords = [
+                    "can't discuss", "cannot discuss", "can't help", "cannot help", "sorry, i",
+                    "từ chối", "không thể hỗ trợ", "không thể thảo luận", "an toàn", "nhạy cảm",
+                    "I'm Claude", "I am Claude", "Hi there!"
+                ]
+                if any(kw.lower() in ai_content.lower() for kw in refusal_keywords):
+                    raise HTTPException(
+                        status_code=502,
+                        detail=f"AI từ chối xử lý nội dung nhạy cảm hoặc phản hồi không phù hợp: \"{ai_content[:100]}...\""
+                    )
                 raise HTTPException(status_code=502, detail="AI không trả về JSON hợp lệ")
             ai_data = _json.loads(m.group())
 

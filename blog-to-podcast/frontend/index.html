@@ -9,7 +9,151 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <!-- CSS -->
-    <link rel="stylesheet" href="styles.css?v=5">
+    <link rel="stylesheet" href="styles.css?v=6">
+    <style>
+        /* ════════════════════════════════════════════════════════
+           LAYOUT OVERRIDE — Right Panel rộng rãi, bố cục thoáng
+           ════════════════════════════════════════════════════════ */
+
+        /* Dashboard 3 cột */
+        .dashboard-layout {
+            display: flex !important;
+            align-items: stretch !important;
+        }
+
+        /* Center panel flex co giãn, không bị tràn */
+        .center-panel {
+            padding: 0 2rem !important;
+            min-width: 0 !important;
+            flex: 1 1 0 !important;
+        }
+
+        /* ── Right Panel: rộng rãi, không bị co ── */
+        .right-panel {
+            width: 500px !important;
+            min-width: 500px !important;
+            flex-shrink: 0 !important;
+        }
+
+        /* Panel state: scroll toàn bộ nội dung bên trong */
+        .panel-state {
+            padding: 1.25rem 1.5rem !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+
+        /* Result layout: cột dọc, các section xếp chồng */
+        .result-layout {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0.9rem !important;
+        }
+
+        /* Result header: gọn lại */
+        .result-header {
+            flex-shrink: 0 !important;
+        }
+
+        /* Cover art nhỏ lại để tiết kiệm chiều cao */
+        .cover-art {
+            width: 64px !important;
+            height: 64px !important;
+            flex-shrink: 0 !important;
+        }
+
+        /* Audio player: không bị co */
+        .custom-player {
+            flex-shrink: 0 !important;
+        }
+
+        /* Action buttons: không bị co */
+        .action-buttons {
+            flex-shrink: 0 !important;
+            gap: 0.75rem !important;
+        }
+
+        /* ══ FIX GỐC: summary-section KHÔNG được flex-grow ══
+           Nguyên nhân bug: flex-grow:1 chiếm hết chỗ,
+           đẩy AI Chat ra khỏi màn hình.                       */
+        .summary-section {
+            flex-grow: 0 !important;   /* ← Fix chính */
+            flex-shrink: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0.6rem !important;
+            min-height: unset !important;
+        }
+
+        /* Nội dung transcript: scroll bên trong, không tràn ra */
+        .summary-content {
+            flex-grow: 0 !important;
+            max-height: 200px !important;
+            min-height: 100px !important;
+            overflow-y: auto !important;
+            padding: 0.9rem 1rem !important;
+            font-size: 0.88rem !important;
+            line-height: 1.65 !important;
+        }
+
+        /* ── Ask AI Assistant: rộng rãi, fit với nội dung ── */
+        .ai-chat-section {
+            flex-shrink: 0 !important;
+            height: auto !important;
+            min-height: 160px !important;
+            max-height: none !important;   /* Tự mở rộng theo nội dung */
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        /* Vùng messages: tự tăng chiều cao theo số tin nhắn */
+        .chat-messages {
+            flex: 0 0 auto !important;     /* Không shrink, không grow cứng */
+            height: auto !important;
+            min-height: 60px !important;
+            max-height: 350px !important;  /* Tối đa 350px rồi mới scroll */
+            overflow-y: auto !important;
+            padding: 14px 16px !important;
+            gap: 12px !important;
+        }
+
+        /* Bubble tin nhắn: rộng hơn, tận dụng chiều ngang */
+        .msg-bubble {
+            max-width: 90% !important;
+            font-size: 0.88rem !important;
+            line-height: 1.6 !important;
+        }
+
+        /* Input chat cố định dưới cùng */
+        .chat-input-area {
+            flex-shrink: 0 !important;
+            padding: 10px 12px !important;
+        }
+
+        /* ── Responsive: laptop vừa (993–1200px) ── */
+        @media (max-width: 1200px) {
+            .right-panel {
+                width: 440px !important;
+                min-width: 440px !important;
+            }
+            .center-panel {
+                padding: 0 1.25rem !important;
+            }
+            .summary-content {
+                max-height: 180px !important;
+            }
+        }
+
+        /* ── Responsive: tablet / mobile ── */
+        @media (max-width: 992px) {
+            .right-panel {
+                width: 100% !important;
+                min-width: unset !important;
+            }
+            .summary-content {
+                max-height: 180px !important;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Immersive Background Effects -->

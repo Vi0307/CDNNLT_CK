@@ -285,11 +285,28 @@ def crawl_url(url: str) -> CrawlResponse:
         text = _pick_best_body(url, html, soup)
         title = _pick_title(url, html, soup, text)
 
+        cleaned_text = text.strip() if text else ""
+        if len(cleaned_text) < 250:
+            # Check for paywall indicators
+            paywall_keywords = [
+                "đăng ký thành viên vip", "thành viên vip", "tài khoản vip",
+                "quét zalo qrcode", "quét zalo qr", "thanh toán bằng",
+                "đọc tiếp vui lòng", "nội dung dành cho", "đăng nhập để đọc",
+                "chỉ dành cho thành viên", "vip member", "gói thuê bao", "báo vip"
+            ]
+            soup_text_lower = soup.get_text().lower()
+            is_paywall = any(kw in soup_text_lower for kw in paywall_keywords)
+            
+            if is_paywall:
+                raise ValueError("Đây là bài viết thu phí (VIP) hoặc yêu cầu đăng nhập để đọc tiếp. Vui lòng sử dụng URL bài viết công khai và đầy đủ.")
+            else:
+                raise ValueError("Nội dung trích xuất quá ngắn (dưới 250 ký tự). Hãy thử một URL bài báo khác đầy đủ và công khai hơn.")
+
         return CrawlResponse(
             url=url,
             title=title or "Không tìm thấy tiêu đề",
-            text=text,
-            word_count=len(text.split()) if text else 0,
+            text=cleaned_text,
+            word_count=len(cleaned_text.split()),
             is_mock=False,
         )
     except Exception as e:
