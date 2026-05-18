@@ -76,6 +76,9 @@ YÊU CẦU QUAN TRỌNG:
     except requests.exceptions.RequestException as e:
         logger.error(f"AI Service request failed: {e}")
         raise HTTPException(status_code=502, detail=f"Claude AI service request failed: {e}")
+    except ValueError as e:
+        logger.error(f"Validation/Parsing error: {e}")
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         logger.error(f"Claude processing failed: {e}")
         raise HTTPException(status_code=502, detail=f"Claude processing failed: {e}")
@@ -104,6 +107,16 @@ def _parse_ai_json(content: str) -> dict[str, Any]:
                 raise ValueError(f"JSON parsing error: {e2}")
         
         logger.error(f"Failed to parse JSON: {e}. Snippet: {content[:200]}")
+        
+        # Check if content has safety block or generic/refusal response
+        refusal_keywords = [
+            "can't discuss", "cannot discuss", "can't help", "cannot help", "sorry, i",
+            "từ chối", "không thể hỗ trợ", "không thể thảo luận", "an toàn", "nhạy cảm",
+            "I'm Claude", "I am Claude", "Hi there!"
+        ]
+        if any(kw.lower() in content.lower() for kw in refusal_keywords):
+            raise ValueError(f"AI từ chối xử lý nội dung nhạy cảm hoặc phản hồi không phù hợp: \"{content[:100]}...\"")
+            
         raise ValueError("Could not find valid JSON object in Claude response")
 
 
