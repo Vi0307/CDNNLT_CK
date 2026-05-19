@@ -16,6 +16,8 @@ RSS_SOURCES = {
             "sức khỏe":  "https://vnexpress.net/rss/suc-khoe.rss",
             "công nghệ": "https://vnexpress.net/rss/khoa-hoc-cong-nghe.rss",
             "kinh tế":   "https://vnexpress.net/rss/kinh-doanh.rss",
+            "tài chính": "https://vnexpress.net/rss/kinh-doanh.rss",
+            "xăng dầu":  "https://vnexpress.net/rss/kinh-doanh.rss",
             "thể thao":  "https://vnexpress.net/rss/the-thao.rss",
             "giải trí":  "https://vnexpress.net/rss/giai-tri.rss",
             "pháp luật": "https://vnexpress.net/rss/phap-luat.rss",
@@ -34,6 +36,8 @@ RSS_SOURCES = {
             "sức khỏe":  "https://tuoitre.vn/rss/suc-khoe.rss",
             "công nghệ": "https://tuoitre.vn/rss/khoa-hoc.rss",
             "kinh tế":   "https://tuoitre.vn/rss/kinh-doanh.rss",
+            "tài chính": "https://tuoitre.vn/rss/kinh-doanh.rss",
+            "xăng dầu":  "https://tuoitre.vn/rss/kinh-doanh.rss",
             "thể thao":  "https://tuoitre.vn/rss/the-thao.rss",
             "giải trí":  "https://tuoitre.vn/rss/giai-tri.rss",
             "thế giới":  "https://tuoitre.vn/rss/the-gioi.rss",
@@ -51,6 +55,8 @@ RSS_SOURCES = {
             "sức khỏe":  "https://thanhnien.vn/rss/suc-khoe.rss",
             "công nghệ": "https://thanhnien.vn/rss/cong-nghe.rss",
             "kinh tế":   "https://thanhnien.vn/rss/kinh-te.rss",
+            "tài chính": "https://thanhnien.vn/rss/kinh-te.rss",
+            "xăng dầu":  "https://thanhnien.vn/rss/kinh-te.rss",
             "thể thao":  "https://thanhnien.vn/rss/the-thao.rss",
             "giải trí":  "https://thanhnien.vn/rss/giai-tri.rss",
             "thế giới":  "https://thanhnien.vn/rss/the-gioi.rss",
@@ -68,6 +74,8 @@ RSS_SOURCES = {
             "sức khỏe":  "https://dantri.com.vn/rss/suc-khoe.rss",
             "công nghệ": "https://dantri.com.vn/rss/khoa-hoc-cong-nghe.rss",
             "kinh tế":   "https://dantri.com.vn/rss/kinh-doanh.rss",
+            "tài chính": "https://dantri.com.vn/rss/kinh-doanh.rss",
+            "xăng dầu":  "https://dantri.com.vn/rss/kinh-doanh.rss",
             "thể thao":  "https://dantri.com.vn/rss/the-thao.rss",
             "giải trí":  "https://dantri.com.vn/rss/giai-tri.rss",
             "thế giới":  "https://dantri.com.vn/rss/the-gioi.rss",
@@ -82,6 +90,8 @@ RSS_SOURCES = {
             "thời sự":   "https://zingnews.vn/xa-hoi.rss",
             "công nghệ": "https://zingnews.vn/cong-nghe.rss",
             "kinh tế":   "https://zingnews.vn/kinh-doanh.rss",
+            "tài chính": "https://zingnews.vn/kinh-doanh.rss",
+            "xăng dầu":  "https://zingnews.vn/kinh-doanh.rss",
             "thể thao":  "https://zingnews.vn/the-thao.rss",
             "giải trí":  "https://zingnews.vn/giai-tri.rss",
             "thế giới":  "https://zingnews.vn/the-gioi.rss",
@@ -94,6 +104,8 @@ RSS_SOURCES = {
             "chính trị": "https://nhandan.vn/rss/chinhtri.rss",
             "thời sự":   "https://nhandan.vn/rss/chinhtri.rss",
             "kinh tế":   "https://nhandan.vn/rss/kinhte.rss",
+            "tài chính": "https://nhandan.vn/rss/kinhte.rss",
+            "xăng dầu":  "https://nhandan.vn/rss/kinhte.rss",
             "thế giới":  "https://nhandan.vn/rss/thegioi.rss",
         }
     },
@@ -104,7 +116,9 @@ TOPIC_KEYWORDS = {
     "giáo dục":  ["giáo dục", "học sinh", "sinh viên", "trường", "đại học", "tuyển sinh", "học phí"],
     "y tế":      ["y tế", "sức khỏe", "bệnh viện", "bác sĩ", "dịch bệnh", "vaccine", "thuốc"],
     "công nghệ": ["công nghệ", "ai", "trí tuệ nhân tạo", "phần mềm", "internet", "robot", "chip"],
-    "kinh tế":   ["kinh tế", "tài chính", "chứng khoán", "ngân hàng", "doanh nghiệp", "gdp", "lạm phát"],
+    "kinh tế":   ["kinh tế", "tài chính", "chứng khoán", "ngân hàng", "doanh nghiệp", "gdp", "lạm phát",
+                  "xăng", "xăng dầu", "giá xăng", "petrolimex", "nhiên liệu",
+                  "vàng", "giá vàng", "vàng sjc", "tỷ giá", "usd", "ngoại tệ"],
     "thể thao":  ["thể thao", "bóng đá", "olympic", "vận động viên", "giải đấu", "huy chương"],
     "giải trí":  ["giải trí", "phim", "âm nhạc", "nghệ sĩ", "ca sĩ", "diễn viên", "concert"],
     "thế giới":  ["thế giới", "quốc tế", "nước ngoài", "mỹ", "trung quốc", "nga", "châu âu"],
@@ -115,14 +129,29 @@ TOPIC_KEYWORDS = {
 
 def _normalize_topic(topic: str) -> str:
     t = topic.lower().strip()
+    # Check trực tiếp key trước
+    for key in RSS_SOURCES["vnexpress"]["feeds"]:
+        if t == key:
+            return key
+    # Check theo keywords
     for key in TOPIC_KEYWORDS:
         if t == key or any(kw in t for kw in TOPIC_KEYWORDS[key]):
             return key
+    # Fallback đặc biệt cho xăng dầu / vàng / tỷ giá
+    fuel_kw = ["xăng", "xăng dầu", "giá xăng", "petrolimex", "nhiên liệu", "dầu diesel"]
+    gold_kw = ["vàng", "giá vàng", "vàng sjc", "vàng 9999"]
+    forex_kw = ["tỷ giá", "usd", "ngoại tệ", "đô la", "euro"]
+    if any(kw in t for kw in fuel_kw):
+        return "kinh tế"
+    if any(kw in t for kw in gold_kw):
+        return "kinh tế"
+    if any(kw in t for kw in forex_kw):
+        return "kinh tế"
     return "default"
 
 
 def _matches_keywords(title: str, summary: str, keywords: List[str]) -> bool:
-    """Kiểm tra title/summary có chứa ít nhất 1 keyword không (word-boundary aware)."""
+    """Kiểm tra title/summary có chứa ít nhất 1 keyword không."""
     import re
     text = (title + " " + summary).lower()
     for kw in keywords:
@@ -133,8 +162,12 @@ def _matches_keywords(title: str, summary: str, keywords: List[str]) -> bool:
         if " " in kw_lower:
             if kw_lower in text:
                 return True
+        elif len(kw_lower) <= 3:
+            # Từ ngắn (Mỹ, Nga, EU...) → tìm đơn giản, không cần word boundary
+            if kw_lower in text:
+                return True
         else:
-            # Từ đơn → tìm có khoảng trắng/dấu câu xung quanh để tránh match nhầm
+            # Từ dài → word boundary để tránh match nhầm
             pattern = r'(?<![a-zA-ZÀ-ỹ])' + re.escape(kw_lower) + r'(?![a-zA-ZÀ-ỹ])'
             if re.search(pattern, text):
                 return True
@@ -153,8 +186,8 @@ def search_news(topic: str, limit: int = 5, keywords: Optional[List[str]] = None
     seen_urls = set()
 
     # Khi có keywords → quét nhiều bài hơn để lọc
-    scan_limit = limit * 6 if keywords else limit
-    per_source = max(3, scan_limit // len(RSS_SOURCES) + 2)
+    scan_limit = limit * 10 if keywords else limit
+    per_source = max(5, scan_limit // len(RSS_SOURCES) + 3)
 
     for source_key, source_info in RSS_SOURCES.items():
         feeds = source_info["feeds"]
