@@ -20,26 +20,32 @@ def process_text(request: ProcessRequest) -> ProcessResponse:
 def process_text_with_ai_service(request: ProcessRequest) -> ProcessResponse:
     try:
         system_instruction = (
-            f"Bạn là một biên tập viên podcast chuyên nghiệp. Ngôn ngữ gốc có thể là bất kỳ ngôn ngữ nào. "
-            f"Ngôn ngữ đầu ra (chuyển đổi) là: {request.language}. "
-            "Chỉ trả về JSON hợp lệ, không markdown, không giải thích thêm. "
-            "JSON bắt buộc có đúng 3 trường: "
-            "'original_script' là kịch bản podcast bằng ngôn ngữ gốc của bài viết (phải khớp từng câu chữ với script), "
-            "'summary' là chuỗi tóm tắt bằng ngôn ngữ đầu ra, "
-            "và 'script' là chuỗi kịch bản podcast hoàn chỉnh bằng ngôn ngữ đầu ra."
+            "Bạn là một biên tập viên podcast chuyên nghiệp. "
+            "Nhiệm vụ của bạn là đọc một bài viết, sau đó tạo ra một kịch bản podcast. "
+            "Yêu cầu TRẢ VỀ DUY NHẤT một đối tượng JSON hợp lệ với 3 trường:\n"
+            "1. 'original_script': Kịch bản podcast viết bằng CHÍNH NGÔN NGỮ GỐC CỦA BÀI BÁO.\n"
+            "2. 'script': Kịch bản podcast ĐÃ ĐƯỢC DỊCH SANG NGÔN NGỮ ĐÍCH do người dùng yêu cầu.\n"
+            "3. 'summary': Tóm tắt bài báo bằng NGÔN NGỮ ĐÍCH."
         )
 
         prompt = f"""
-HÃY XỬ LÝ NỘI DUNG BÀI VIẾT SAU:
+NGÔN NGỮ ĐÍCH NGƯỜI DÙNG YÊU CẦU: {request.language}
+
+NỘI DUNG BÀI VIẾT:
 {request.text[:15000]}
 
-YÊU CẦU QUAN TRỌNG:
-1. script: Viết lại thành kịch bản podcast lôi cuốn, tự nhiên bằng ngôn ngữ đầu ra, phù hợp để đọc thành audio.
-2. original_script: Nếu ngôn ngữ gốc của bài viết khác với ngôn ngữ đầu ra, hãy dịch kịch bản podcast ('script') trở lại ngôn ngữ gốc. Nếu giống nhau, hãy sao chép y nguyên 'script'.
-3. summary: Tóm tắt nội dung chính bằng ngôn ngữ đầu ra.
-4. BẮT BUỘC trả về ĐÚNG VÀ CHỈ 1 OBJECT JSON HỢP LỆ. KHÔNG thêm bất kỳ giải thích, markdown (```), hay văn bản nào khác ngoài JSON.
-5. Hãy chắc chắn escape (thoát) đúng các ký tự đặc biệt (như ngoặc kép, dấu xuống dòng) bên trong chuỗi JSON.
-6. Cấu trúc JSON chuẩn xác: {{"original_script":"...", "summary":"...","script":"..."}}
+CÁC BƯỚC THỰC HIỆN:
+Bước 1: Xác định ngôn ngữ gốc của bài viết trên.
+Bước 2: Dựa trên bài viết, hãy soạn một kịch bản podcast sinh động bằng CHÍNH NGÔN NGỮ GỐC ĐÓ. Lưu vào trường "original_script".
+Bước 3: Dịch kịch bản podcast ở Bước 2 sang ngôn ngữ đích ({request.language}). Lưu vào trường "script". Nếu ngôn ngữ đích đã trùng với ngôn ngữ gốc, hãy copy y nguyên.
+Bước 4: Viết một đoạn tóm tắt bài báo bằng ngôn ngữ đích ({request.language}). Lưu vào trường "summary".
+
+ĐỊNH DẠNG ĐẦU RA BẮT BUỘC (Chỉ chứa JSON, không chứa dấu ```):
+{{
+  "original_script": "...",
+  "script": "...",
+  "summary": "..."
+}}
 """.strip()
 
         logger.info("Sending request to AI Service (Claude)")

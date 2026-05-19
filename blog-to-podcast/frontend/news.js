@@ -422,6 +422,9 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             chatMessages.innerHTML = "<div class='message'><div class='msg-avatar ai'><i class='fa-solid fa-robot'></i></div>" +
                 "<div class='msg-content ai'>I've finished reading <strong>" + arts.length + "</strong> articles about <strong>" + escHtml(data.topic) + "</strong>. What would you like to know?</div></div>";
+                
+            // Save state for page reload
+            sessionStorage.setItem('newsPodcastState', JSON.stringify(data));
         }, 600);
     }
 
@@ -445,6 +448,7 @@ document.addEventListener("DOMContentLoaded", () => {
         steps.forEach(s => { s.className = "p-step"; s.querySelector("span").textContent = "Waiting..."; });
     }
     function resetUI() {
+        sessionStorage.removeItem('newsPodcastState');
         generateBtn.disabled = false;
         generateBtn.querySelector(".btn-text").style.display = "";
         generateBtn.querySelector("i").style.display = "";
@@ -645,5 +649,18 @@ document.addEventListener("DOMContentLoaded", () => {
         // Xuống dòng → <br>
         t = t.replace(/\n/g, "<br>");
         return t;
+    }
+
+    // --- Restore State on Reload ---
+    const savedState = sessionStorage.getItem('newsPodcastState');
+    if (savedState) {
+        try {
+            const data = JSON.parse(savedState);
+            formContainer.classList.add("hidden");
+            document.getElementById('hero-section').classList.add('hidden');
+            showResult(data);
+        } catch(e) {
+            console.error("Failed to restore state", e);
+        }
     }
 });

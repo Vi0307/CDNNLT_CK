@@ -399,11 +399,17 @@ document.addEventListener('DOMContentLoaded', () => {
             btnText.style.display = 'block';
             btnIcon.style.display = 'block';
             btnLoader.classList.add('hidden');
+            
+            // Save state for page reload
+            sessionStorage.setItem('podcastState', JSON.stringify({
+                audioPath, summaryText, originalSummaryText, domain, voiceName, rawArticleText
+            }));
 
         }, 1000);
     }
 
     function resetUI() {
+        sessionStorage.removeItem('podcastState');
         switchState(null);
         document.getElementById('main-right-panel').classList.add('hidden');
 
@@ -606,5 +612,22 @@ document.addEventListener('DOMContentLoaded', () => {
         
         chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // --- Restore State on Reload ---
+    const savedState = sessionStorage.getItem('podcastState');
+    if (savedState) {
+        try {
+            const data = JSON.parse(savedState);
+            rawArticleText = data.rawArticleText || '';
+            document.getElementById('main-right-panel').classList.remove('hidden');
+            
+            // Bypass the generating visual timeout by tweaking showResult or just calling it directly
+            // For simplicity, we just call showResult which takes 1 second to transition
+            switchState(stateGenerating); // Initial state
+            showResult(data.audioPath, data.summaryText, data.originalSummaryText, data.domain, data.voiceName);
+        } catch(e) {
+            console.error("Failed to restore state", e);
+        }
     }
 });
