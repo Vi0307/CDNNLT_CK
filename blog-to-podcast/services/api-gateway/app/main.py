@@ -128,17 +128,25 @@ async def convert(request: ConvertRequest):
         voice    = _resolve_voice(request.language, request.voice)
 
         logger.info(f"[TTS] tts_text length={len(tts_text)}, voice={voice}")
-        try:
-            tts_res = await client.post(
-                f"{TTS_SERVICE_URL}/tts",
-                json={"text": tts_text, "language": request.language, "voice": voice},
-            )
-            tts_res.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            detail = _extract_detail(e.response)
-            raise HTTPException(status_code=502, detail=f"[TTS] {detail}")
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"[TTS] Không kết nối được tts-service: {e}")
+        # Retry TTS tối đa 3 lần
+        tts_last_error = None
+        for tts_attempt in range(3):
+            try:
+                tts_res = await client.post(
+                    f"{TTS_SERVICE_URL}/tts",
+                    json={"text": tts_text, "language": request.language, "voice": voice},
+                )
+                if tts_res.status_code == 200:
+                    break
+                tts_last_error = _extract_detail(tts_res)
+                logger.warning(f"[TTS] Attempt {tts_attempt+1} failed {tts_res.status_code}, retrying...")
+                import asyncio; await asyncio.sleep(2)
+            except httpx.RequestError as e:
+                tts_last_error = str(e)
+                import asyncio; await asyncio.sleep(2)
+        else:
+            raise HTTPException(status_code=502, detail=f"[TTS] Thất bại sau 3 lần thử: {tts_last_error}")
+        tts_res.raise_for_status()
 
         tts_data = tts_res.json()
         audio_url = tts_data.get("audio_url", "")
@@ -606,8 +614,9 @@ async def generate_news_podcast(request: NewsPodcastRequest):
         if need_translation:
             prompt = f"""Bạn là AI chuyên tổng hợp tin tức và tạo podcast.
 Nhiệm vụ:
-- Đọc {len(crawled_articles)} bài báo về chủ đề "{request.topic}"
-- Tóm tắt các ý chính, không lặp ý
+- Đọc {len(crawled_articles)} bài báo dưới đây
+- CHỈ tổng hợp các thông tin liên quan đến chủ đề: "{request.topic}"{f' với từ khóa: {", ".join(request.keywords)}' if request.keywords else ''}
+- Bỏ qua hoàn toàn các bài/đoạn không liên quan đến chủ đề trên
 - Tạo 2 phiên bản script podcast:
   1. script_vi: script bằng tiếng Việt tự nhiên
   2. script: script dịch sang {lang_name}, tự nhiên như người bản ngữ
@@ -627,8 +636,9 @@ CÁC BÀI BÁO:
         else:
             prompt = f"""Bạn là AI chuyên tổng hợp tin tức và tạo podcast.
 Nhiệm vụ:
-- Đọc {len(crawled_articles)} bài báo về chủ đề "{request.topic}"
-- Tóm tắt các ý chính, không lặp ý
+- Đọc {len(crawled_articles)} bài báo dưới đây
+- CHỈ tổng hợp các thông tin liên quan đến chủ đề: "{request.topic}"{f' với từ khóa: {", ".join(request.keywords)}' if request.keywords else ''}
+- Bỏ qua hoàn toàn các bài/đoạn không liên quan đến chủ đề trên
 - Tạo script podcast tự nhiên, dễ nghe, khoảng 3-5 phút đọc
 
 Yêu cầu script:
@@ -698,16 +708,27 @@ CÁC BÀI BÁO:
         voice = _resolve_voice(request.language, request.voice)
         tts_text = _prepare_tts_text(script)
 
-        try:
-            tts_res = await client.post(
-                f"{TTS_SERVICE_URL}/tts",
-                json={"text": tts_text, "language": request.language, "voice": voice},
-            )
-            tts_res.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(status_code=502, detail=f"[TTS] {_extract_detail(e.response)}")
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"[TTS] Không kết nối được tts-service: {e}")
+        # Retry TTS tối đa 3 lần (edge-tts không ổn định)
+        tts_last_error = None
+        for tts_attempt in range(3):
+            try:
+                tts_res = await client.post(
+                    f"{TTS_SERVICE_URL}/tts",
+                    json={"text": tts_text, "language": request.language, "voice": voice},
+                )
+                if tts_res.status_code == 200:
+                    break
+                tts_last_error = _extract_detail(tts_res)
+                logger.warning(f"[TTS] Attempt {tts_attempt+1} failed with {tts_res.status_code}, retrying...")
+                import asyncio; await asyncio.sleep(2)
+            except httpx.RequestError as e:
+                tts_last_error = str(e)
+                logger.warning(f"[TTS] Attempt {tts_attempt+1} request error: {e}, retrying...")
+                import asyncio; await asyncio.sleep(2)
+        else:
+            raise HTTPException(status_code=502, detail=f"[TTS] Thất bại sau 3 lần thử: {tts_last_error}")
+
+        tts_res.raise_for_status()
 
         audio_url = tts_res.json().get("audio_url", "")
         if not audio_url:

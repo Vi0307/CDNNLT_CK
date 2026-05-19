@@ -64,11 +64,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Realtime detection (client-side, không cần AI)
     const REALTIME_MAP = {
-        "gold": ["gold price", "gold sjc", "gold 9999", "gia vang", "vang sjc"],
-        "exchange_rate": ["exchange rate", "usd price", "dollar", "foreign currency", "ty gia", "usd", "eur vnd"],
-        "fuel": ["fuel price", "gas price", "oil price", "gia xang", "xang dau", "petrolimex"],
-        "weather": ["weather", "temperature", "forecast", "thoi tiet", "rain", "sunshine"],
-        "football": ["football", "soccer", "match schedule", "world cup", "premier league", "champions league", "v-league"]
+        "gold": ["gold price", "gold sjc", "gold 9999", "gia vang", "vang sjc",
+                 "giá vàng", "vàng sjc", "vàng hôm nay", "giá vàng hôm nay"],
+        "exchange_rate": ["exchange rate", "usd price", "dollar", "foreign currency", "ty gia", "usd", "eur vnd",
+                          "tỷ giá", "giá usd", "đô la hôm nay"],
+        "fuel": ["fuel price", "gas price", "oil price", "gia xang", "xang dau", "petrolimex",
+                 "giá xăng", "giá xăng hôm nay", "giá dầu", "xăng dầu hôm nay", "giá xăng dầu"],
+        "weather": ["weather", "temperature", "forecast", "thoi tiet", "rain", "sunshine",
+                    "thời tiết", "nhiệt độ hôm nay", "dự báo thời tiết"],
+        "football": ["football", "soccer", "match schedule", "world cup", "premier league", "champions league", "v-league",
+                     "lịch thi đấu", "kết quả bóng đá", "bóng đá hôm nay"]
     };
 
     function detectRealtime(query) {
@@ -339,6 +344,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 data.topic = query;
                 data.summary = data.raw_data || "";
                 data.articles = [];
+            }
+            // Với realtime, tạo 1 "source" giả từ thông tin scrape
+            if (rtType && (!data.articles || data.articles.length === 0)) {
+                const sourceMap = {
+                    "gold": { title: "Giá vàng SJC - Ngọc Thịnh Jewelry", url: "https://ngocthinh-jewelry.vn/pages/bang-gia-vang", source: "Ngọc Thịnh Jewelry" },
+                    "exchange_rate": { title: "Tỷ giá ngoại tệ - Vietcombank", url: "https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx", source: "Vietcombank" },
+                    "fuel": { title: "Giá xăng dầu Petrolimex", url: "https://webgia.com/gia-xang-dau/petrolimex/", source: "Petrolimex / webgia.com" },
+                    "weather": { title: "Thời tiết - OpenWeatherMap", url: "https://openweathermap.org", source: "OpenWeatherMap" },
+                    "football": { title: "Lịch thi đấu bóng đá - Bongda.com.vn", url: "https://bongda.com.vn/lich-thi-dau", source: "Bongda.com.vn" },
+                };
+                const src = sourceMap[rtType];
+                if (src) data.articles = [src];
             }
             steps.forEach(s => { s.className = "p-step active"; s.querySelector("span").textContent = "Done"; });
             showResult(data);
